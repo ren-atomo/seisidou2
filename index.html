@@ -830,6 +830,7 @@
         function searchAndHighlight() {
             const era = document.getElementById('eraSelect').value;
             const country = document.getElementById('countrySelect').value;
+            
             // Remove existing highlights and show all rows
             document.querySelectorAll('.highlight').forEach(el => {
                 el.classList.remove('highlight');
@@ -840,24 +841,37 @@
 
             if (era === '' && country === '') return;
 
-            const tables = [document.getElementById('historyTable'), document.getElementById('contentTable')];
+            const tables = ['historyTable', 'contentTable'].map(id => document.getElementById(id)).filter(Boolean);
 
             tables.forEach(table => {
-                table.querySelectorAll('tr').forEach(row => {
-                    if (era && row.dataset.era && row.dataset.era !== era) {
-                        row.style.display = 'none';
-                    } else {
-                        row.style.display = '';
-                    }
+                if (table) {
+                    table.querySelectorAll('tr').forEach(row => {
+                        if (era && row.dataset.era && row.dataset.era !== era) {
+                            row.style.display = 'none';
+                        } else {
+                            row.style.display = '';
+                        }
 
-                    if (country) {
-                        row.querySelectorAll(`td[data-country="${country}"]`).forEach(cell => {
-                            cell.classList.add('highlight');
-                        });
-                    }
-                });
+                        if (country) {
+                            row.querySelectorAll(`td[data-country="${country}"]`).forEach(cell => {
+                                cell.classList.add('highlight');
+                            });
+                        }
+                    });
+                }
             });
         }
+
+        // DOMの読み込みが完了してから実行
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchButton = document.getElementById('searchButton');
+            const eraSelect = document.getElementById('eraSelect');
+            const countrySelect = document.getElementById('countrySelect');
+
+            if (searchButton) searchButton.addEventListener('click', searchAndHighlight);
+            if (eraSelect) eraSelect.addEventListener('change', searchAndHighlight);
+            if (countrySelect) countrySelect.addEventListener('change', searchAndHighlight);
+        });
 
         document.getElementById('searchButton').addEventListener('click', searchAndHighlight);
         document.getElementById('eraSelect').addEventListener('change', searchAndHighlight);
