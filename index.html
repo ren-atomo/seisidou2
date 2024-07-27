@@ -3,808 +3,833 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>世界の性教育の包括的歴史と比較</title>
+    <title>世界の性教育の包括的比較と評価</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1, h2, h3 {
-            color: #1a5f7a;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
-            background-color: #1a5f7a;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .evaluation, .additional-info {
-            background-color: #e6f3ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        #searchContainer {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        select, button {
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #1a5f7a;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .highlight {
-            background-color: yellow;
-        }
-        #navigation {
-            background-color: #f0f0f0;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        #navigation ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        #navigation ul li {
-            display: inline;
-            margin-right: 15px;
-        }
-        .hidden {
-            display: none;
-        }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body>
-    <h1>世界の性教育の包括的歴史と比較</h1>
+<body class="bg-gray-100 font-sans" x-data="{ activeTab: 'history' }">
+    <header class="bg-blue-600 text-white py-4 sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold">世界の性教育の包括的比較と評価</h1>
+        </div>
+    </header>
 
-    <div id="navigation">
-        <ul>
-            <li><a href="#history">歴史的変遷</a></li>
-            <li><a href="#current">現在の比較</a></li>
-            <li><a href="#evaluation">評価と課題</a></li>
-            <li><a href="#case-studies">事例研究</a></li>
-            <li><a href="#resources">関連リソース</a></li>
-        </ul>
-    </div>
+    <nav class="bg-blue-500 text-white py-2 sticky top-16 z-40">
+        <div class="container mx-auto px-4 flex justify-between">
+            <div class="space-x-4">
+                <button @click="activeTab = 'history'" :class="{ 'font-bold': activeTab === 'history' }">歴史的変遷</button>
+                <button @click="activeTab = 'current'" :class="{ 'font-bold': activeTab === 'current' }">現在の比較</button>
+                <button @click="activeTab = 'evaluation'" :class="{ 'font-bold': activeTab === 'evaluation' }">評価と課題</button>
+                <button @click="activeTab = 'case-studies'" :class="{ 'font-bold': activeTab === 'case-studies' }">事例研究</button>
+                <button @click="activeTab = 'resources'" :class="{ 'font-bold': activeTab === 'resources' }">関連リソース</button>
+            </div>
+            <div class="flex space-x-2">
+                <select id="eraSelect" class="text-black px-2 py-1 rounded">
+                    <option value="">年代を選択</option>
+                    <option value="1900">1900年代前半</option>
+                    <option value="1950">1950年代</option>
+                    <option value="1960">1960年代</option>
+                    <option value="1970">1970年代</option>
+                    <option value="1980">1980年代</option>
+                    <option value="1990">1990年代</option>
+                    <option value="2000">2000年代</option>
+                    <option value="2010">2010年代〜現在</option>
+                </select>
+                <select id="countrySelect" class="text-black px-2 py-1 rounded">
+                    <option value="">国を選択</option>
+                    <option value="japan">日本</option>
+                    <option value="usa">アメリカ</option>
+                    <option value="netherlands">オランダ</option>
+                    <option value="sweden">スウェーデン</option>
+                    <option value="china">中国</option>
+                    <option value="korea">韓国</option>
+                </select>
+                <button id="searchButton" class="bg-white text-blue-600 px-2 py-1 rounded">検索</button>
+            </div>
+        </div>
+    </nav>
 
-    <div id="searchContainer">
-        <select id="eraSelect">
-            <option value="">年代を選択</option>
-            <option value="1900">1900年代前半</option>
-            <option value="1950">1950年代</option>
-            <option value="1960">1960年代</option>
-            <option value="1970">1970年代</option>
-            <option value="1980">1980年代</option>
-            <option value="1990">1990年代</option>
-            <option value="2000">2000年代</option>
-            <option value="2010">2010年代〜現在</option>
-        </select>
-        <select id="countrySelect">
-            <option value="">国を選択</option>
-            <option value="japan">日本</option>
-            <option value="usa">アメリカ</option>
-            <option value="netherlands">オランダ</option>
-            <option value="sweden">スウェーデン</option>
-            <option value="china">中国</option>
-            <option value="korea">韓国</option>
-        </select>
-        <button id="searchButton">検索</button>
-    </div>
+    <main class="container mx-auto px-4 py-8">
+        <div x-show="activeTab === 'history'" x-transition>
+            <h2 class="text-2xl font-bold mb-4">1. 性教育の歴史的変遷と特徴</h2>
+            <div class="overflow-x-auto">
+                <table id="historyTable" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                    <thead class="bg-blue-600 text-white">
+                        <tr>
+                            <th class="p-3">時期</th>
+                            <th class="p-3">日本</th>
+                            <th class="p-3">アメリカ</th>
+                            <th class="p-3">オランダ</th>
+                            <th class="p-3">スウェーデン</th>
+                            <th class="p-3">中国</th>
+                            <th class="p-3">韓国</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-era="1900">
+                            <td class="p-3 font-semibold">1900年代前半</td>
+                            <td class="p-3" data-country="japan">
+                                - 1920年代：山本宣治らによる性教育の萌芽<br>
+                                - 1930年代：性病予防を中心とした衛生教育開始<br>
+                                - 社会背景：産業化と都市化の進展、性病の蔓延
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1912年：全米性教育・衛生協会設立<br>
+                                - 1920年代：社会衛生運動の一環として性教育開始<br>
+                                - 背景：移民の増加、都市化による社会問題の顕在化
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1900年代初頭：性病予防教育の開始<br>
+                                - 1930年代：家族計画運動の萌芽<br>
+                                - 背景：産業革命後の社会変化、公衆衛生の重要性認識
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1933年：世界初の義務的性教育を導入<br>
+                                - 背景：社会民主主義思想の台頭、女性の権利向上運動
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 1920年代：新文化運動の影響で性に関する議論開始<br>
+                                - 1930年代：一部知識人による性教育の必要性提唱<br>
+                                - 背景：伝統的価値観と西洋思想の衝突
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 日本統治下：公的な性教育はほぼ存在せず<br>
+                                - 儒教的価値観による性の抑圧<br>
+                                - 背景：植民地支配と伝統文化の葛藤
+                            </td>
+                        </tr>
+                        <tr data-era="1950">
+                            <td class="p-3 font-semibold">1950年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 1947年：学習指導要領で初めて性教育に言及<br>
+                                - 1950年代：純潔教育の推進<br>
+                                - 背景：戦後の民主化、GHQの影響
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1950年代：冷戦期の保守化により性教育後退<br>
+                                - 1953年：キンゼイ報告書発表、社会に衝撃<br>
+                                - 背景：保守主義と性革命の萌芽の対立
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1950年代：カトリック教会の影響下で保守的な性教育<br>
+                                - 背景：戦後復興と伝統的価値観の再確認
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1955年：性教育の義務化を強化<br>
+                                - 背景：福祉国家の発展、男女平等の推進
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 1949年：中華人民共和国成立後、性教育は抑制<br>
+                                - 背景：共産主義イデオロギー、伝統的価値観の強化
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 1950年代：朝鮮戦争後、性教育はほぼ不在<br>
+                                - 背景：戦後復興、伝統的価値観の存続
+                            </td>
+                        </tr>
+                        <tr data-era="1960">
+                            <td class="p-3 font-semibold">1960年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 1960年代後半：科学的性教育の必要性認識<br>
+                                - 1965年：日本家族計画連盟による性教育の推進<br>
+                                - 背景：高度経済成長、性の商品化への懸念
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1960年代：性革命の到来、ピルの普及<br>
+                                - 1964年：SECUSが包括的性教育ガイドライン発表<br>
+                                - 背景：公民権運動、反戦運動、カウンターカルチャー
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1960年代後半：性の自由化運動の開始<br>
+                                - 1967年：ピルの合法化<br>
+                                - 背景：若者文化の台頭、宗教の影響力低下
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1962年：より詳細な性教育カリキュラムの導入<br>
+                                - 背景：性の自由化、男女平等の進展
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 文化大革命期：性教育は完全に抑制<br>
+                                - 背景：極左思想の台頭、伝統文化の否定
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 1960年代：家族計画の一環として限定的な性教育開始<br>
+                                - 背景：経済発展政策、人口抑制政策
+                            </td>
+                        </tr>
+                        <tr data-era="1970">
+                            <td class="p-3 font-semibold">1970年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 1972年：文部省「性教育の手引き」発行<br>
+                                - 1970年代後半：性教育研究団体の設立相次ぐ<br>
+                                - 背景：男女共学の普及、女性の社会進出
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1970年：全米性情報教育協議会（SIECUS）設立<br>
+                                - 1978年：10代の妊娠防止法成立<br>
+                                - 背景：女性解放運動、性の多様性への認識向上
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1971年：オランダ家族計画協会設立<br>
+                                - 1976年：学校での性教育義務化<br>
+                                - 背景：性の自由化の進展、実用的アプローチの採用
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1977年：さらに包括的な性教育カリキュラム導入<br>
+                                - 背景：男女平等のさらなる進展、性の多様性への理解
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 1970年代後半：改革開放政策開始<br>
+                                - 人口抑制政策の一環として家族計画教育開始<br>
+                                - 背景：経済改革、一人っ子政策の導入
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 1970年代：人口抑制政策の強化<br>
+                                - 学校での基礎的な性教育の開始<br>
+                                - 背景：急速な経済発展、都市化の進行
+                            </td>
+                        </tr>
+                        <tr data-era="1980">
+                            <td class="p-3 font-semibold">1980年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 1987年：エイズ教育の開始<br>
+                                - 1989年：学習指導要領改訂、性教育の充実化<br>
+                                - 背景：エイズパニック、少子化問題の顕在化
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1981年：エイズの発見と教育への影響<br>
+                                - 1980年代後半：禁欲のみの性教育プログラム台頭<br>
+                                - 背景：保守政権下での道徳教育重視、エイズ危機
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1984年：包括的性教育プログラム「Long Live Love」開始<br>
+                                - 背景：エイズ危機、実践的アプローチの強化
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1980年代：HIV/AIDS教育の強化<br>
+                                - 性的マイノリティに関する教育の開始<br>
+                                - 背景：エイズ危機、多様性への理解促進
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 1980年代後半：初めての性教育教材作成<br>
+                                - 背景：改革開放の進展、西洋の影響増大
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 1980年代：民主化運動と共に性教育の必要性認識<br>
+                                - 背景：社会の自由化、西洋文化の影響増大
+                            </td>
+                        </tr>
+                        <tr data-era="1990">
+                            <td class="p-3 font-semibold">1990年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 1992年：「生きる力」を育む教育の一環として性教育推進<br>
+                                - 1999年：「学校における性教育の考え方」発表<br>
+                                - 背景：少子化対策、男女共同参画社会基本法制定
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 1991年：包括的性教育vs禁欲教育の論争激化<br>
+                                - 1996年：福祉改革法による禁欲教育への連邦資金提供開始<br>
+                                - 背景：保守vs進歩の対立、10代の妊娠問題
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 1993年：性教育をより包括的に改訂<br>
+                                - 1999年：「Long Live Love」プログラムの更新<br>
+                                - 背景：多文化社会への対応、効果的な性教育モデルの確立
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 1994年：新しい国家カリキュラムで性教育をさらに強化<br>
+                                - 1990年代後半：LGBTQの権利に関する教育の拡大<br>
+                                - 背景：多様性の尊重、ジェンダー平等の推進
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 1994年：カイロ国際人口開発会議参加後、性教育に前向きな姿勢<br>
+                                - 1998年：初の全国規模の性教育会議開催<br>
+                                - 背景：国際社会との協調、社会の開放化
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 1995年：性教育指針の策定<br>
+                                - 1990年代後半：学校での性教育の体系化<br>
+                                - 背景：急速な社会変化、青少年問題への対応
+                            </td>
+                        </tr>
+                        <tr data-era="2000">
+                            <td class="p-3 font-semibold">2000年代</td>
+                            <td class="p-3" data-country="japan">
+                                - 2002年：「性教育バッシング」問題発生<br>
+                                - 2005年：文科省が性教育の行き過ぎに警告<br>
+                                - 背景：保守派の台頭、少子化問題の深刻化
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 2004年：「医学的に正確な」性教育法案の提出<br>
+                                - 2009年：オバマ政権下で包括的性教育への支持拡大<br>
+                                - 背景：エビデンスベースの教育重視、政権交代による政策変更
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 2003年：同性婚の合法化、性教育にも反映<br>
+                                - 2008年：性教育をさらに低年齢から開始する方針<br>
+                                - 背景：性的多様性の尊重、早期教育の重要性認識
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 2005年：性教育にジェンダー理論を本格的に導入<br>
+                                - 2009年：新しい差別禁止法制定、性教育にも影響<br>
+                                - 背景：ジェンダー平等のさらなる推進、多様性の尊重
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 2002年：「青少年性健康教育指導綱要」発表<br>
+                                - 2008年：北京オリンピックを機に性教育への注目度上昇<br>
+                                - 背景：経済発展に伴う社会変化、国際的プレゼンスの向上
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 2001年：学校保健法改正、性教育の義務化<br>
+                                - 2008年：包括的性教育ガイドラインの導入<br>
+                                - 背景：青少年の性問題への懸念、国際基準への対応
+                            </td>
+                        </tr>
+                        <tr data-era="2010">
+                            <td class="p-3 font-semibold">2010年代〜現在</td>
+                            <td class="p-3" data-country="japan">
+                                - 2015年：「性同一性障害に係る児童生徒」に関する文科省通知<br>
+                                - 2017年：新学習指導要領で多様な性に関する記述追加<br>
+                                - 背景：LGBTQの権利意識向上、#MeToo運動の影響
+                            </td>
+                            <td class="p-3" data-country="usa">
+                                - 2015年：全米で同性婚合法化、性教育への影響<br>
+                                - 2018年：多くの州で包括的性教育法案の導入<br>
+                                - 背景：性的多様性の受容拡大、ソーシャルメディアの影響
+                            </td>
+                            <td class="p-3" data-country="netherlands">
+                                - 2012年：デジタル時代に対応した新しい性教育カリキュラム導入<br>
+                                - 2019年：性的同意に関する教育の強化<br>
+                                - 背景：オンラインリスクへの対応、#MeToo運動の影響
+                            </td>
+                            <td class="p-3" data-country="sweden">
+                                - 2011年：新しい教育法で性教育の位置づけ強化<br>
+                                - 2018年：性的同意に関する法改正、教育内容にも反映<br>
+                                - 背景：ジェンダー平等のさらなる推進、#MeToo運動の影響
+                            </td>
+                            <td class="p-3" data-country="china">
+                                - 2011年：複数の省で性教育の試験的導入<br>
+                                - 2017年：一部の大学で性教育の必修化<br>
+                                - 背景：若者の価値観の変化、性に関する社会問題の顕在化
+                            </td>
+                            <td class="p-3" data-country="korea">
+                                - 2015年：包括的性教育に関する国家レベルの議論活発化<br>
+                                - 2020年：オンライン性教育の拡大<br>
+                                - 背景：#MeToo運動の影響、デジタル時代への対応
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <h2 id="history">1. 性教育の歴史的変遷と特徴</h2>
-    <table id="historyTable">
-        <tr>
-            <th>時期</th>
-            <th>日本</th>
-            <th>アメリカ</th>
-            <th>オランダ</th>
-            <th>スウェーデン</th>
-            <th>中国</th>
-            <th>韓国</th>
-        </tr>
-        <tr data-era="1900">
-            <td>1900年代前半</td>
-            <td data-country="japan">
-                - 1920年代：山本宣治らによる性教育の萌芽<br>
-                - 1930年代：性病予防を中心とした衛生教育開始<br>
-                - 社会背景：産業化と都市化の進展、性病の蔓延
-            </td>
-            <td data-country="usa">
-                - 1912年：全米性教育・衛生協会設立<br>
-                - 1920年代：社会衛生運動の一環として性教育開始<br>
-                - 背景：移民の増加、都市化による社会問題の顕在化
-            </td>
-            <td data-country="netherlands">
-                - 1900年代初頭：性病予防教育の開始<br>
-                - 1930年代：家族計画運動の萌芽<br>
-                - 背景：産業革命後の社会変化、公衆衛生の重要性認識
-            </td>
-            <td data-country="sweden">
-                - 1933年：世界初の義務的性教育を導入<br>
-                - 背景：社会民主主義思想の台頭、女性の権利向上運動
-            </td>
-            <td data-country="china">
-                - 1920年代：新文化運動の影響で性に関する議論開始<br>
-                - 1930年代：一部知識人による性教育の必要性提唱<br>
-                - 背景：伝統的価値観と西洋思想の衝突
-            </td>
-            <td data-country="korea">
-                - 日本統治下：公的な性教育はほぼ存在せず<br>
-                - 儒教的価値観による性の抑圧<br>
-                - 背景：植民地支配と伝統文化の葛藤
-            </td>
-        </tr>
-        <tr data-era="1950">
-            <td>1950年代</td>
-            <td data-country="japan">
-                - 1947年：学習指導要領で初めて性教育に言及<br>
-                - 1950年代：純潔教育の推進<br>
-                - 背景：戦後の民主化、GHQの影響
-            </td>
-            <td data-country="usa">
-                - 1950年代：冷戦期の保守化により性教育後退<br>
-                - 1953年：キンゼイ報告書発表、社会に衝撃<br>
-                - 背景：保守主義と性革命の萌芽の対立
-            </td>
-            <td data-country="netherlands">
-                - 1950年代：カトリック教会の影響下で保守的な性教育<br>
-                - 背景：戦後復興と伝統的価値観の再確認
-            </td>
-            <td data-country="sweden">
-                - 1955年：性教育の義務化を強化<br>
-                - 背景：福祉国家の発展、男女平等の推進
-            </td>
-            <td data-country="china">
-                - 1949年：中華人民共和国成立後、性教育は抑制<br>
-                - 背景：共産主義イデオロギー、伝統的価値観の強化
-            </td>
-            <td data-country="korea">
-                - 1950年代：朝鮮戦争後、性教育はほぼ不在<br>
-                - 背景：戦後復興、伝統的価値観の存続
-            </td>
-        </tr>
-        <tr data-era="1960">
-            <td>1960年代</td>
-            <td data-country="japan">
-                - 1960年代後半：科学的性教育の必要性認識<br>
-                - 1965年：日本家族計画連盟による性教育の推進<br>
-                - 背景：高度経済成長、性の商品化への懸念
-            </td>
-            <td data-country="usa">
-                - 1960年代：性革命の到来、ピルの普及<br>
-                - 1964年：SECUSが包括的性教育ガイドライン発表<br>
-                - 背景：公民権運動、反戦運動、カウンターカルチャー
-            </td>
-            <td data-country="netherlands">
-                - 1960年代後半：性の自由化運動の開始<br>
-                - 1967年：ピルの合法化<br>
-                - 背景：若者文化の台頭、宗教の影響力低下
-            </td>
-            <td data-country="sweden">
-                - 1962年：より詳細な性教育カリキュラムの導入<br>
-                - 背景：性の自由化、男女平等の進展
-            </td>
-            <td data-country="china">
-                - 文化大革命期：性教育は完全に抑制<br>
-                - 背景：極左思想の台頭、伝統文化の否定
-            </td>
-            <td data-country="korea">
-                - 1960年代：家族計画の一環として限定的な性教育開始<br>
-                - 背景：経済発展政策、人口抑制政策
-            </td>
-        </tr>
-        <tr data-era="1970">
-            <td>1970年代</td>
-            <td data-country="japan">
-                - 1972年：文部省「性教育の手引き」発行<br>
-                - 1970年代後半：性教育研究団体の設立相次ぐ<br>
-                - 背景：男女共学の普及、女性の社会進出
-            </td>
-            <td data-country="usa">
-                - 1970年：全米性情報教育協議会（SIECUS）設立<br>
-                - 1978年：10代の妊娠防止法成立<br>
-                - 背景：女性解放運動、性の多様性への認識向上
-            </td>
-            <td data-country="netherlands">
-                - 1971年：オランダ家族計画協会設立<br>
-                - 1976年：学校での性教育義務化<br>
-                - 背景：性の自由化の進展、実用的アプローチの採用
-            </td>
-            <td data-country="sweden">
-                - 1977年：さらに包括的な性教育カリキュラム導入<br>
-                - 背景：男女平等のさらなる進展、性の多様性への理解
-            </td>
-            <td data-country="china">
-                - 1970年代後半：改革開放政策開始<br>
-                - 人口抑制政策の一環として家族計画教育開始<br>
-                - 背景：経済改革、一人っ子政策の導入
-            </td>
-            <td data-country="korea">
-                - 1970年代：人口抑制政策の強化<br>
-                - 学校での基礎的な性教育の開始<br>
-                - 背景：急速な経済発展、都市化の進行
-            </td>
-        </tr>
-        <tr data-era="1980">
-            <td>1980年代</td>
-            <td data-country="japan">
-                - 1987年：エイズ教育の開始<br>
-                - 1989年：学習指導要領改訂、性教育の充実化<br>
-                - 背景：エイズパニック、少子化問題の顕在化
-            </td>
-            <td data-country="usa">
-                - 1981年：エイズの発見と教育への影響<br>
-                - 1980年代後半：禁欲のみの性教育プログラム台頭<br>
-                - 背景：保守政権下での道徳教育重視、エイズ危機
-            </td>
-            <td data-country="netherlands">
-                - 1984年：包括的性教育プログラム「Long Live Love」開始<br>
-                - 背景：エイズ危機、実践的アプローチの強化
-            </td>
-            <td data-country="sweden">
-                - 1980年代：HIV/AIDS教育の強化<br>
-                - 性的マイノリティに関する教育の開始<br>
-                - 背景：エイズ危機、多様性への理解促進
-            </td>
-            <td data-country="china">
-                - 1980年代後半：初めての性教育教材作成<br>
-                - 背景：改革開放の進展、西洋の影響増大
-            </td>
-            <td data-country="korea">
-                - 1980年代：民主化運動と共に性教育の必要性認識<br>
-                - 背景：社会の自由化、西洋文化の影響増大
-            </td>
-        </tr>
-        <tr data-era="1990">
-            <td>1990年代</td>
-            <td data-country="japan">
-                - 1992年：「生きる力」を育む教育の一環として性教育推進<br>
-                - 1999年：「学校における性教育の考え方」発表<br>
-                - 背景：少子化対策、男女共同参画社会基本法制定
-            </td>
-            <td data-country="usa">
-                - 1991年：包括的性教育vs禁欲教育の論争激化<br>
-                - 1996年：福祉改革法による禁欲教育への連邦資金提供開始<br>
-                - 背景：保守vs進歩の対立、10代の妊娠問題
-            </td>
-            <td data-country="netherlands">
-                - 1993年：性教育をより包括的に改訂<br>
-                - 1999年：「Long Live Love」プログラムの更新<br>
-                - 背景：多文化社会への対応、効果的な性教育モデルの確立
-            </td>
-            <td data-country="sweden">
-                - 1994年：新しい国家カリキュラムで性教育をさらに強化<br>
-                - 1990年代後半：LGBTQの権利に関する教育の拡大<br>
-                - 背景：多様性の尊重、ジェンダー平等の推進
-            </td>
-            <td data-country="china">
-                - 1994年：カイロ国際人口開発会議参加後、性教育に前向きな姿勢<br>
-                - 1998年：初の全国規模の性教育会議開催<br>
-                - 背景：国際社会との協調、社会の開放化
-            </td>
-            <td data-country="korea">
-                - 1995年：性教育指針の策定<br>
-                - 1990年代後半：学校での性教育の体系化<br>
-                - 背景：急速な社会変化、青少年問題への対応
-            </td>
-        </tr>
-        <tr data-era="2000">
-            <td>2000年代</td>
-            <td data-country="japan">
-                - 2002年：「性教育バッシング」問題発生<br>
-                - 2005年：文科省が性教育の行き過ぎに警告<br>
-                - 背景：保守派の台頭、少子化問題の深刻化
-            </td>
-            <td data-country="usa">
-                - 2004年：「医学的に正確な」性教育法案の提出<br>
-                - 2009年：オバマ政権下で包括的性教育への支持拡大<br>
-                - 背景：エビデンスベースの教育重視、政権交代による政策変更
-            </td>
-            <td data-country="netherlands">
-                - 2003年：同性婚の合法化、性教育にも反映<br>
-                - 2008年：性教育をさらに低年齢から開始する方針<br>
-                - 背景：性的多様性の尊重、早期教育の重要性認識
-            </td>
-            <td data-country="sweden">
-                - 2005年：性教育にジェンダー理論を本格的に導入<br>
-                - 2009年：新しい差別禁止法制定、性教育にも影響<br>
-                - 背景：ジェンダー平等のさらなる推進、多様性の尊重
-            </td>
-            <td data-country="china">
-                - 2002年：「青少年性健康教育指導綱要」発表<br>
-                - 2008年：北京オリンピックを機に性教育への注目度上昇<br>
-                - 背景：経済発展に伴う社会変化、国際的プレゼンスの向上
-            </td>
-            <td data-country="korea">
-                - 2001年：学校保健法改正、性教育の義務化<br>
-                - 2008年：包括的性教育ガイドラインの導入<br>
-                - 背景：青少年の性問題への懸念、国際基準への対応
-            </td>
-        </tr>
-        <tr data-era="2010">
-            <td>2010年代〜現在</td>
-            <td data-country="japan">
-                - 2015年：「性同一性障害に係る児童生徒」に関する文科省通知<br>
-                - 2017年：新学習指導要領で多様な性に関する記述追加<br>
-                - 背景：LGBTQの権利意識向上、#MeToo運動の影響
-            </td>
-            <td data-country="usa">
-                - 2015年：全米で同性婚合法化、性教育への影響<br>
-                - 2018年：多くの州で包括的性教育法案の導入<br>
-                - 背景：性的多様性の受容拡大、ソーシャルメディアの影響
-            </td>
-            <td data-country="netherlands">
-                - 2012年：デジタル時代に対応した新しい性教育カリキュラム導入<br>
-                - 2019年：性的同意に関する教育の強化<br>
-                - 背景：オンラインリスクへの対応、#MeToo運動の影響
-            </td>
-            <td data-country="sweden">
-                - 2011年：新しい教育法で性教育の位置づけ強化<br>
-                - 2018年：性的同意に関する法改正、教育内容にも反映<br>
-                - 背景：ジェンダー平等のさらなる推進、#MeToo運動の影響
-            </td>
-            <td data-country="china">
-                - 2011年：複数の省で性教育の試験的導入<br>
-                - 2017年：一部の大学で性教育の必修化<br>
-                - 背景：若者の価値観の変化、性に関する社会問題の顕在化
-            </td>
-            <td data-country="korea">
-                - 2015年：包括的性教育に関する国家レベルの議論活発化<br>
-                - 2020年：オンライン性教育の拡大<br>
-                - 背景：#MeToo運動の影響、デジタル時代への対応
-            </td>
-        </tr>
-    </table>
+        <div x-show="activeTab === 'current'" x-transition x-cloak>
+            <h2 class="text-2xl font-bold mb-4">2. 現在の性教育内容比較</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-2">開始年齢の比較</h3>
+                    <canvas id="startAgeChart"></canvas>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold mb-2">アプローチの比較</h3>
+                    <canvas id="approachChart"></canvas>
+                </div>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold mb-4">各国の現在の性教育内容詳細</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                        <thead class="bg-blue-600 text-white">
+                            <tr>
+                                <th class="p-3">項目</th>
+                                <th class="p-3">日本</th>
+                                <th class="p-3">アメリカ</th>
+                                <th class="p-3">オランダ</th>
+                                <th class="p-3">スウェーデン</th>
+                                <th class="p-3">中国</th>
+                                <th class="p-3">韓国</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-3 font-semibold">開始年齢</td>
+                                <td class="p-3" data-country="japan">主に中学生以降（一部小学校高学年から）</td>
+                                <td class="p-3" data-country="usa">州によって異なるが、多くは小学校高学年から</td>
+                                <td class="p-3" data-country="netherlands">4〜5歳から段階的に</td>
+                                <td class="p-3" data-country="sweden">就学前教育から</td>
+                                <td class="p-3" data-country="china">主に中学生以降</td>
+                                <td class="p-3" data-country="korea">小学校低学年から</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">アプローチ</td>
+                                <td class="p-3" data-country="japan">
+                                    主に生物学的・医学的アプローチ。近年、心理社会的側面も徐々に導入。
+                                </td>
+                                <td class="p-3" data-country="usa">
+                                    州により大きく異なる。包括的性教育vs禁欲教育の対立が続く。
+                                </td>
+                                <td class="p-3" data-country="netherlands">
+                                    包括的性教育。生物学、心理学、社会学的側面を統合。
+                                </td>
+                                <td class="p-3" data-country="sweden">
+                                    包括的性教育。ジェンダー平等と多様性を重視。
+                                </td>
+                                <td class="p-3" data-country="china">
+                                    主に生物学的アプローチ。地域により大きな差がある。
+                                </td>
+                                <td class="p-3" data-country="korea">
+                                    生物学的アプローチが中心だが、包括的アプローチへの移行が進行中。
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">主な内容</td>
+                                <td class="p-3" data-country="japan">
+                                    - 生殖器の構造と機能<br>
+                                    - 月経・射精のメカニズム<br>
+                                    - 性感染症予防<br>
+                                    - 妊娠・出産の基礎知識<br>
+                                    - 近年、性的同意やLGBTQに関する内容も増加
+                                </td>
+                                <td class="p-3" data-country="usa">
+                                    州により異なるが、一般的に：<br>
+                                    - 人間の性と生殖<br>
+                                    - 性感染症と予防<br>
+                                    - 避妊方法<br>
+                                    - 健全な人間関係<br>
+                                    - 性的同意<br>
+                                    - 一部の州ではLGBTQの内容も
+                                </td>
+                                <td class="p-3" data-country="netherlands">
+                                    - 人間の身体と発達<br>
+                                    - 感情と自己肯定感<br>
+                                    - 人間関係とコミュニケーション<br>
+                                    - 性的多様性<br>
+                                    - 性的健康と権利<br>
+                                    - メディアリテラシー
+                                </td>
+                                <td class="p-3" data-country="sweden">
+                                    - 人間の性と生殖<br>
+                                    - ジェンダーと性的指向<br>
+                                    - 人間関係と境界線<br>
+                                    - 性的同意と権利<br>
+                                    - メディアと性<br>
+                                    - 性の多様性
+                                </td>
+                                <td class="p-3" data-country="china">
+                                    - 生殖器の構造と機能<br>
+                                    - 思春期の変化<br>
+                                    - 性感染症予防<br>
+                                    - 避妊方法<br>
+                                    - 一部地域で人間関係やジェンダーの内容も
+                                </td>
+                                <td class="p-3" data-country="korea">
+                                    - 人体の構造と機能<br>
+                                    - 思春期の変化<br>
+                                    - 性感染症と予防<br>
+                                    - 避妊方法<br>
+                                    - 近年、ジェンダー平等や性暴力防止の内容も増加
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-semibold">教材・方法</td>
+                                <td class="p-3" data-country="japan">
+                                    - 教科書中心<br>
+                                    - 講義形式が多い<br>
+                                    - 一部でワークショップ導入<br>
+                                    - デジタル教材の利用増加
+                                </td>
+                                <td class="p-3" data-country="usa">
+                                    - 州や学区により多様<br>
+                                    - 教科書、ビデオ教材<br>
+                                    - ロールプレイ、討論<br>
+                                    - オンライン教材の活用
+                                </td>
+                                <td class="p-3" data-country="netherlands">
+                                    - インタラクティブな教材<br>
+                                    - ロールプレイ、ディスカッション<br>
+                                    - デジタル教材の積極的活用<br>
+                                    - 専門家による出張授業
+                                </td>
+                                <td class="p-3" data-country="sweden">
+                                    - 多様な教材（書籍、映像、デジタル）<br>
+                                    - グループワーク、討論<br>
+                                    - 外部専門家の招聘<br>
+                                    - 生徒主導のプロジェクト
+                                </td>
+                                <td class="p-3" data-country="china">
+                                    - 教科書中心<br>
+                                    - 講義形式が主<br>
+                                    - 一部地域でデジタル教材導入<br>
+                                    - 専門家による特別授業
+                                </td>
+                                <td class="p-3" data-country="korea">
+                                    - 教科書と補助教材<br>
+                                    - 講義とグループワークの併用<br>
+                                    - オンライン教材の導入開始<br>
+                                    - 外部講師による特別授業
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-    <!-- 以下、現在の比較、評価と課題、事例研究、関連リソースのセクションが続きます -->
+        <div x-show="activeTab === 'evaluation'" x-transition x-cloak>
+            <h2 class="text-2xl font-bold mb-4">3. 総合評価と今後の課題</h2>
+            <div x-data="{ openCountry: null }">
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg shadow">
+                        <button 
+                            @click="openCountry = openCountry === '日本' ? null : '日本'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>日本</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === '日本'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === '日本'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>基礎的な生物学的知識の提供は比較的充実</li>
+                                <li>性感染症予防に関する意識は高い</li>
+                                <li>一部地域で先進的な取り組みが始まっている</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>包括的アプローチの不足（人間関係、感情面の教育が不十分）</li>
+                                <li>開始年齢が遅い（多くの先進国と比較して）</li>
+                                <li>LGBTQや性の多様性に関する教育が不足</li>
+                                <li>教員のトレーニングが不十分</li>
+                                <li>社会的タブーにより、オープンな議論が難しい</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>より早期からの段階的な性教育の導入</li>
+                                <li>包括的性教育アプローチの採用（生物学的側面だけでなく、心理的・社会的側面も含む）</li>
+                                <li>教員向けの体系的なトレーニングプログラムの開発と実施</li>
+                                <li>性の多様性やジェンダー平等に関する教育の強化</li>
+                                <li>保護者や地域社会を巻き込んだ性教育の推進</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow mt-4">
+                        <button 
+                            @click="openCountry = openCountry === 'アメリカ' ? null : 'アメリカ'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>アメリカ</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === 'アメリカ'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === 'アメリカ'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>多様な教育アプローチの存在</li>
+                                <li>性的同意の概念の強調</li>
+                                <li>一部の州での包括的性教育の実施</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>州によって内容に大きな差がある</li>
+                                <li>政治的・宗教的影響による教育内容の制限</li>
+                                <li>禁欲のみの教育プログラムの存在</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>全国的な統一基準の策定</li>
+                                <li>科学的根拠に基づいた教育の普及</li>
+                                <li>政治的・宗教的対立の克服</li>
+                                <li>包括的性教育の拡大</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- オランダ、スウェーデン、中国、韓国の評価も同様に追加 -->
+                    <div class="bg-white rounded-lg shadow mt-4">
+                        <button 
+                            @click="openCountry = openCountry === 'オランダ' ? null : 'オランダ'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>オランダ</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === 'オランダ'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === 'オランダ'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>早期からの包括的な性教育アプローチ</li>
+                                <li>オープンで実践的なコミュニケーション</li>
+                                <li>性的健康と権利に焦点を当てた教育</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>多様な文化背景を持つ生徒への対応の課題</li>
+                                <li>デジタル時代の新たなリスクへの対応</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>文化的多様性に配慮した教育内容の開発</li>
+                                <li>オンラインでの性的リスクに関する教育の強化</li>
+                                <li>国際的なベストプラクティスの維持と更新</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow mt-4">
+                        <button 
+                            @click="openCountry = openCountry === 'スウェーデン' ? null : 'スウェーデン'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>スウェーデン</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === 'スウェーデン'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === 'スウェーデン'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>ジェンダー平等と多様性を重視した包括的アプローチ</li>
+                                <li>早期からの体系的な性教育</li>
+                                <li>LGBTQ+の権利と包摂性の強調</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>教員間のスキルと知識の差</li>
+                                <li>移民背景を持つ生徒への対応の課題</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>教員の均質的なスキル向上とトレーニング</li>
+                                <li>多文化社会における効果的なアプローチの開発</li>
+                                <li>デジタル時代の新たな課題への対応</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow mt-4">
+                        <button 
+                            @click="openCountry = openCountry === '中国' ? null : '中国'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>中国</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === '中国'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === '中国'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>近年の性教育に対する積極的な政策導入</li>
+                                <li>都市部での先進的な取り組み</li>
+                                <li>国家レベルでの性教育ガイドラインの策定</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>地域間の大きな格差</li>
+                                <li>伝統的価値観との衝突</li>
+                                <li>包括的アプローチの不足</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>全国的な標準カリキュラムの開発と実施</li>
+                                <li>教員トレーニングの全国的な展開</li>
+                                <li>都市部と農村部の格差解消</li>
+                                <li>文化的に適切な包括的性教育の推進</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow mt-4">
+                        <button 
+                            @click="openCountry = openCountry === '韓国' ? null : '韓国'" 
+                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
+                        >
+                            <span>韓国</span>
+                            <svg 
+                                :class="{'rotate-180': openCountry === '韓国'}" 
+                                class="w-5 h-5 transition-transform" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="openCountry === '韓国'" x-transition class="p-4 border-t">
+                            <h4 class="font-semibold mb-2">長所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>体系的な性教育の基盤整備</li>
+                                <li>近年の包括的アプローチへの移行</li>
+                                <li>デジタル技術を活用した性教育の試み</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">短所：</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>保守的な社会規範との葛藤</li>
+                                <li>学校間での実施の一貫性不足</li>
+                                <li>LGBTQ+に関する教育の不足</li>
+                            </ul>
+                            <h4 class="font-semibold mb-2">課題：</h4>
+                            <ul class="list-disc pl-5">
+                                <li>包括的性教育の全国的な展開と標準化</li>
+                                <li>教員の専門性向上と継続的なトレーニング</li>
+                                <li>性の多様性に関する教育の強化</li>
+                                <li>デジタル時代に対応した新たな教育内容の開発</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <h2 id="current">2. 現在の性教育内容比較</h2>
-    <table id="contentTable">
-        <tr>
-            <th>項目</th>
-            <th>日本</th>
-            <th>アメリカ</th>
-            <th>オランダ</th>
-            <th>スウェーデン</th>
-            <th>中国</th>
-            <th>韓国</th>
-        </tr>
-        <tr>
-            <td>開始年齢</td>
-            <td data-country="japan">主に中学生以降（一部小学校高学年から）</td>
-            <td data-country="usa">州によって異なるが、多くは小学校高学年から</td>
-            <td data-country="netherlands">4〜5歳から段階的に</td>
-            <td data-country="sweden">就学前教育から</td>
-            <td data-country="china">主に中学生以降</td>
-            <td data-country="korea">小学校低学年から</td>
-        </tr>
-        <tr>
-            <td>アプローチ</td>
-            <td data-country="japan">
-                主に生物学的・医学的アプローチ。近年、心理社会的側面も徐々に導入。
-            </td>
-            <td data-country="usa">
-                州により大きく異なる。包括的性教育vs禁欲教育の対立が続く。
-            </td>
-            <td data-country="netherlands">
-                包括的性教育。生物学、心理学、社会学的側面を統合。
-            </td>
-            <td data-country="sweden">
-                包括的性教育。ジェンダー平等と多様性を重視。
-            </td>
-            <td data-country="china">
-                主に生物学的アプローチ。地域により大きな差がある。
-            </td>
-            <td data-country="korea">
-                生物学的アプローチが中心だが、包括的アプローチへの移行が進行中。
-            </td>
-        </tr>
-        <tr>
-            <td>主な内容</td>
-            <td data-country="japan">
-                - 生殖器の構造と機能<br>
-                - 月経・射精のメカニズム<br>
-                - 性感染症予防<br>
-                - 妊娠・出産の基礎知識<br>
-                - 近年、性的同意やLGBTQに関する内容も増加
-            </td>
-            <td data-country="usa">
-                州により異なるが、一般的に：<br>
-                - 人間の性と生殖<br>
-                - 性感染症と予防<br>
-                - 避妊方法<br>
-                - 健全な人間関係<br>
-                - 性的同意<br>
-                - 一部の州ではLGBTQの内容も
-            </td>
-            <td data-country="netherlands">
-                - 人間の身体と発達<br>
-                - 感情と自己肯定感<br>
-                - 人間関係とコミュニケーション<br>
-                - 性的多様性<br>
-                - 性的健康と権利<br>
-                - メディアリテラシー
-            </td>
-            <td data-country="sweden">
-                - 人間の性と生殖<br>
-                - ジェンダーと性的指向<br>
-                - 人間関係と境界線<br>
-                - 性的同意と権利<br>
-                - メディアと性<br>
-                - 性の多様性
-            </td>
-            <td data-country="china">
-                - 生殖器の構造と機能<br>
-                - 思春期の変化<br>
-                - 性感染症予防<br>
-                - 避妊方法<br>
-                - 一部地域で人間関係やジェンダーの内容も
-            </td>
-            <td data-country="korea">
-                - 人体の構造と機能<br>
-                - 思春期の変化<br>
-                - 性感染症と予防<br>
-                - 避妊方法<br>
-                - 近年、ジェンダー平等や性暴力防止の内容も増加
-            </td>
-        </tr>
-        <tr>
-            <td>教材・方法</td>
-            <td data-country="japan">
-                - 教科書中心<br>
-                - 講義形式が多い<br>
-                - 一部でワークショップ導入<br>
-                - デジタル教材の利用増加
-            </td>
-            <td data-country="usa">
-                - 州や学区により多様<br>
-                - 教科書、ビデオ教材<br>
-                - ロールプレイ、討論<br>
-                - オンライン教材の活用
-            </td>
-            <td data-country="netherlands">
-                - インタラクティブな教材<br>
-                - ロールプレイ、ディスカッション<br>
-                - デジタル教材の積極的活用<br>
-                - 専門家による出張授業
-            </td>
-            <td data-country="sweden">
-                - 多様な教材（書籍、映像、デジタル）<br>
-                - グループワーク、討論<br>
-                - 外部専門家の招聘<br>
-                - 生徒主導のプロジェクト
-            </td>
-            <td data-country="china">
-                - 教科書中心<br>
-                - 講義形式が主<br>
-                - 一部地域でデジタル教材導入<br>
-                - 専門家による特別授業
-            </td>
-            <td data-country="korea">
-                - 教科書と補助教材<br>
-                - 講義とグループワークの併用<br>
-                - オンライン教材の導入開始<br>
-                - 外部講師による特別授業
-            </td>
-        </tr>
-        <tr>
-            <td>教員トレーニング</td>
-            <td data-country="japan">
-                限定的。多くは個人の努力に依存。一部地域で研修プログラム実施。
-            </td>
-            <td data-country="usa">
-                州により異なる。専門的トレーニングプログラムあり。教員の個人的価値観が影響することも。
-            </td>
-            <td data-country="netherlands">
-                体系的な訓練プログラムあり。定期的な更新研修も実施。
-            </td>
-            <td data-country="sweden">
-                教員養成課程で性教育を必修化。定期的な研修制度も充実。
-            </td>
-            <td data-country="china">
-                地域差が大きい。都市部では専門的トレーニングプログラムも。農村部では不十分。
-            </td>
-            <td data-country="korea">
-                近年、トレーニングプログラムを強化中。教育庁主導の研修増加。
-            </td>
-        </tr>
-        <tr>
-            <td>保護者の関与</td>
-            <td data-country="japan">
-                限定的。学校主導の傾向。保護者向け説明会の実施増加。
-            </td>
-            <td data-country="usa">
-                州により異なる。オプトアウト（不参加）の選択肢あり。保護者の意見が大きく影響。
-            </td>
-            <td data-country="netherlands">
-                保護者の積極的な参加を促進。家庭での性教育支援プログラムあり。
-            </td>
-            <td data-country="sweden">
-                学校と家庭の連携重視。保護者向けガイドラインや研修の提供。
-            </td>
-            <td data-country="china">
-                伝統的に限定的。近年、都市部で保護者向けプログラム増加。
-            </td>
-            <td data-country="korea">
-                保護者向け教育プログラムを徐々に導入。学校と家庭の連携強化の動き。
-            </td>
-        </tr>
-    </table>
+        <div x-show="activeTab === 'case-studies'" x-transition x-cloak>
+            <h2 class="text-2xl font-bold mb-4">4. 事例研究</h2>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3">オランダの成功事例</h3>
+                    <p class="mb-4">オランダは、世界で最も効果的な性教育プログラムを持つ国の一つとして知られています。</p>
+                    <h4 class="font-semibold mb-2">特徴：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>4歳からの段階的な教育開始</li>
+                        <li>オープンなコミュニケーションの促進</li>
+                        <li>"Spring Fever" ウィークの実施（毎年の性教育特別週間）</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">結果：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>10代の妊娠率と中絶率が世界最低水準</li>
+                        <li>性的同意や避妊に関する高い意識</li>
+                        <li>LGBTQに対する社会的受容度の向上</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">教訓：</h4>
+                    <ul class="list-disc pl-5">
+                        <li>早期からの包括的アプローチの重要性</li>
+                        <li>社会全体での取り組みの必要性</li>
+                        <li>オープンで判断を控えた対話の効果</li>
+                    </ul>
+                </div>
+                <!-- スウェーデンと日本の事例研究も同様に追加 -->
+                <div class="bg-white p-6 rounded-lg shadow mt-6">
+                    <h3 class="text-xl font-semibold mb-3">スウェーデンのジェンダー平等アプローチ</h3>
+                    <p class="mb-4">スウェーデンは、ジェンダー平等を重視した性教育で知られています。</p>
+                    <h4 class="font-semibold mb-2">特徴：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>就学前教育からのジェンダー平等教育</li>
+                        <li>性教育とジェンダー学習の統合</li>
+                        <li>LGBTQ+の権利と多様性の尊重を重視</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">アプローチ：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>ジェンダーニュートラルな言語の使用</li>
+                        <li>ステレオタイプに挑戦する教材の開発</li>
+                        <li>男女混合のグループディスカッション</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">結果：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>ジェンダー平等意識の高い世代の育成</li>
+                        <li>LGBTQ+に対する社会的受容度の向上</li>
+                        <li>性暴力やハラスメントへの意識向上</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">教訓：</h4>
+                    <ul class="list-disc pl-5">
+                        <li>ジェンダー平等を性教育の中心に据えることの重要性</li>
+                        <li>社会規範や価値観の変革における教育の役割</li>
+                        <li>多様性を尊重する姿勢の育成の必要性</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow mt-6">
+                    <h3 class="text-xl font-semibold mb-3">日本の「生きる力」を育む性教育の取り組み</h3>
+                    <p class="mb-4">日本では、「生きる力」の育成を目指す教育の一環として性教育を位置づけています。</p>
+                    <h4 class="font-semibold mb-2">特徴：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>学習指導要領に基づく体系的なアプローチ</li>
+                        <li>保健体育を中心とした教科横断的な取り組み</li>
+                        <li>地域や学校の実情に応じた柔軟な実施</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">アプローチ：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>発達段階に応じた段階的な学習</li>
+                        <li>科学的知識と生命尊重の精神の統合</li>
+                        <li>家庭や地域と連携した取り組み</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">課題と今後の展望：</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>包括的性教育の視点の強化</li>
+                        <li>LGBTQ+に関する教育内容の充実</li>
+                        <li>デジタル時代に対応した新たな教育方法の開発</li>
+                    </ul>
+                    <h4 class="font-semibold mb-2">教訓：</h4>
+                    <ul class="list-disc pl-5">
+                        <li>文化的背景を考慮した性教育の重要性</li>
+                        <li>学校全体で取り組む包括的アプローチの必要性</li>
+                        <li>社会の変化に応じた継続的な改善の重要性</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-    <div id="evaluationSection" class="evaluation">
-        <h2 id="evaluation">3. 総合評価と今後の課題</h2>
-        <h3>各国の特徴と課題：</h3>
-        <ul>
-            <li><strong>日本：</strong>
-                <ul>
-                    <li>長所：基礎的な生物学的知識の提供は比較的充実</li>
-                    <li>短所：包括的アプローチの不足、開始年齢が遅い</li>
-                    <li>課題：
-                        - LGBTQや性の多様性に関する教育の強化<br>
-                        - 教員トレーニングの充実<br>
-                        - 心理社会的側面の強化<br>
-                        - 保護者の関与促進
-                    </li>
-                </ul>
-            </li>
-            <li><strong>アメリカ：</strong>
-                <ul>
-                    <li>長所：多様な教育アプローチの存在、性的同意の概念の強調</li>
-                    <li>短所：州によって内容に大きな差がある</li>
-                    <li>課題：
-                        - 全国的な統一基準の策定<br>
-                        - 科学的根拠に基づいた教育の普及<br>
-                        - 政治的・宗教的対立の克服
-                    </li>
-                </ul>
-            </li>
-            <li><strong>オランダ：</strong>
-                <ul>
-                    <li>長所：早期からの包括的アプローチ、開放的な態度</li>
-                    <li>短所：移民背景を持つ生徒への対応</li>
-                    <li>課題：
-                        - 文化的多様性への対応<br>
-                        - デジタル時代の新たなリスクへの対策<br>
-                        - 国際的なベストプラクティスの維持
-                    </li>
-                </ul>
-            </li>
-            <li><strong>スウェーデン：</strong>
-                <ul>
-                    <li>長所：ジェンダー平等と多様性の重視、包括的アプローチ</li>
-                    <li>短所：教員間のスキル差</li>
-                    <li>課題：
-                        - 教員の均質的なスキル向上<br>
-                        - 新たな社会問題（オンラインの性的搾取など）への対応<br>
-                        - 多文化社会における効果的なアプローチの開発
-                    </li>
-                </ul>
-            </li>
-            <li><strong>中国：</strong>
-                <ul>
-                    <li>長所：近年の積極的な政策導入、都市部での先進的取り組み</li>
-                    <li>短所：地域間格差、伝統的価値観との衝突</li>
-                    <li>課題：
-                        - 全国的な標準カリキュラムの開発と実施<br>
-                        - 教員トレーニングの全国的な展開<br>
-                        - 都市部と農村部の格差解消
-                    </li>
-                </ul>
-            </li>
-            <li><strong>韓国：</strong>
-                <ul>
-                    <li>長所：体系的な性教育の基盤整備、近年の包括的アプローチへの移行</li>
-                    <li>短所：保守的な社会規範との葛藤、実施の一貫性不足</li>
-                    <li>課題：
-                        - 包括的性教育の全国的な展開<br>
-                        - 教員の専門性向上<br>
-                        - 性の多様性に関する教育の強化<br>
-                        - デジタル時代に対応した新たな教育内容の開発
-                    </li>
-                </ul>
-            </li>
-        </ul>
-
-        <h3>国際的な動向と今後の展望：</h3>
-        <p>世界的に見ると、包括的性教育（CSE: Comprehensive Sexuality Education）の重要性が認識されつつあります。UNESCOやWHOなどの国際機関も、CSEの導入を推奨しています。今後は以下の点が重要になると考えられます：</p>
-        <ul>
-            <li>デジタル時代に対応した新しい教育方法や教材の開発
-                <ul>
-                    <li>オンラインでの性的リスク（グルーミング、ポルノグラフィーの影響など）への対応</li>
-                    <li>ソーシャルメディアを活用した効果的な情報発信</li>
-                    <li>バーチャルリアリティ（VR）やアプリを用いた体験型学習の導入</li>
-                </ul>
-            </li>
-            <li>性の多様性やジェンダー平等に関する教育の強化
-                <ul>
-                    <li>LGBTQの権利と尊重に関する教育の普及</li>
-                    <li>ジェンダーステレオタイプの解消を目指した教育アプローチ</li>
-                    <li>インターセクショナリティ（交差性）の視点を取り入れた教育内容の開発</li>
-                </ul>
-            </li>
-            <li>メディアリテラシーと性教育の統合
-                <ul>
-                    <li>ポルノグラフィーの影響に関する批判的思考力の育成</li>
-                    <li>SNSでの自己表現と privacy の管理に関する教育</li>
-                    <li>メディアにおける性の描写を分析する能力の向上</li>
-                </ul>
-            </li>
-            <li>文化的背景を考慮しつつ、科学的根拠に基づいた教育の普及
-                <ul>
-                    <li>エビデンスベースの教育プログラムの開発と評価</li>
-                    <li>多文化社会に対応した柔軟な教育アプローチの確立</li>
-                    <li>宗教団体や保守層との建設的な対話の促進</li>
-                </ul>
-            </li>
-            <li>グローバルな課題への対応
-                <ul>
-                    <li>気候変動と人口問題を踏まえた性教育の再考</li>
-                    <li>グローバル化に伴う性的健康リスクへの対策（例：性感染症の国際的流行）</li>
-                    <li>難民や移民の子どもたちへの適切な性教育の提供</li>
-                </ul>
-            </li>
-        </ul>
-        <p>これらの課題に取り組むことで、より効果的で包括的な性教育の実現が期待されます。各国の文化的背景や社会規範を尊重しつつ、科学的根拠に基づいた普遍的なアプローチを確立することが、今後の国際的な目標となるでしょう。</p>
-    </div>
-
-    <div id="caseStudies" class="additional-info">
-        <h2 id="case-studies">4. 事例研究</h2>
-        <h3>オランダの成功事例：</h3>
-        <p>オランダは、世界で最も効果的な性教育プログラムを持つ国の一つとして知られています。</p>
-        <ul>
-            <li><strong>特徴：</strong> 
-                <ul>
-                    <li>4歳からの段階的な教育開始</li>
-                    <li>オープンなコミュニケーションの促進</li>
-                    <li>"Spring Fever" ウィークの実施（毎年の性教育特別週間）</li>
-                </ul>
-            </li>
-            <li><strong>アプローチ：</strong>
-                <ul>
-                    <li>ポジティブな性のイメージの醸成</li>
-                    <li>年齢に応じた適切な情報提供</li>
-                    <li>親や保護者の積極的な関与</li>
-                </ul>
-            </li>
-            <li><strong>結果：</strong>
-                <ul>
-                    <li>10代の妊娠率と中絶率が世界最低水準</li>
-                    <li>性的同意や避妊に関する高い意識</li>
-                    <li>LGBTQに対する社会的受容度の向上</li>
-                </ul>
-            </li>
-            <li><strong>教訓：</strong>
-                <ul>
-                    <li>早期からの包括的アプローチの重要性</li>
-                    <li>社会全体での取り組みの必要性</li>
-                    <li>オープンで判断を控えた対話の効果</li>
-                </ul>
-            </li>
-        </ul>
-
-        <h3>スウェーデンのジェンダー平等アプローチ：</h3>
-        <p>スウェーデンは、ジェンダー平等を重視した性教育で知られています。</p>
-        <ul>
-            <li><strong>特徴：</strong>
-                <ul>
-                    <li>就学前教育からのジェンダー平等教育</li>
-                    <li>性教育とジェンダー学習の統合</li>
-                    <li>LGBTQ+の権利と多様性の尊重を重視</li>
-                </ul>
-            </li>
-            <li><strong>アプローチ：</strong>
-                <ul>
-                    <li>ジェンダーニュートラルな言語の使用</li>
-                    <li>ステレオタイプに挑戦する教材の開発</li>
-                    <li>男女混合のグループディスカッション</li>
-                </ul>
-            </li>
-            <li><strong>結果：</strong>
-                <ul>
-                    <li>ジェンダー平等意識の高い世代の育成</li>
-                    <li>LGBTQ+に対する社会的受容度の向上</li>
-                    <li>性暴力やハラスメントへの意識向上</li>
-                </ul>
-            </li>
-            <li><strong>教訓：</strong>
-                <ul>
-                    <li>ジェンダー平等を性教育の中心に据えることの重要性</li>
-                    <li>社会規範や価値観の変革における教育の役割</li>
-                    <li>多様性を尊重する姿勢の育成の必要性</li>
-                </ul>
-            </li>
-        </ul>
-
-        <h3>日本の「生きる力」を育む性教育の取り組み：</h3>
-        <p>日本では、「生きる力」の育成を目指す教育の一環として性教育を位置づけています。</p>
-        <ul>
-            <li><strong>特徴：</strong>
-                <ul>
-                    <li>学習指導要領に基づく体系的なアプローチ</li>
-                    <li>保健体育を中心とした教科横断的な取り組み</li>
-                    <li>地域や学校の実情に応じた柔軟な実施</li>
-                </ul>
-            </li>
-            <li><strong>アプローチ：</strong>
-                <ul>
-                    <li>発達段階に応じた段階的な学習</li>
-                    <li>科学的知識と生命尊重の精神の統合</li>
-                    <li>家庭や地域と連携した取り組み</li>
-                </ul>
-            </li>
-            <li><strong>課題と今後の展望：</strong>
-                <ul>
-                    <li>包括的性教育の視点の強化</li>
-                    <li>LGBTQ+に関する教育内容の充実</li>
-                    <li>デジタル時代に対応した新たな教育方法の開発</li>
-                </ul>
-            </li>
-            <li><strong>教訓：</strong>
-                <ul>
-                    <li>文化的背景を考慮した性教育の重要性</li>
-                    <li>学校全体で取り組む包括的アプローチの必要性</li>
-                    <li>社会の変化に応じた継続的な改善の重要性</li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <div id="resources" class="additional-info">
-        <h2 id="resources">5. 関連リソース</h2>
-        <h3>国際機関のガイドライン：</h3>
-        <ul>
-            <li><a href="https://www.unesco.org/en/education/health-well-being/comprehensive-sexuality-education">UNESCO: International technical guidance on sexuality education</a></li>
-            <li><a href="https://www.who.int/publications/i/item/9789231002595">WHO: Standards for Sexuality Education in Europe</a></li>
-            <li><a href="https://www.unfpa.org/comprehensive-sexuality-education">UNFPA: Comprehensive Sexuality Education</a></li>
-        </ul>
-        <h3>研究論文：</h3>
-        <ul>
-            <li><a href="#">Lindberg, L. D., & Kantor, L. M. (2023). Adolescents' receipt of sex education in a nationally representative sample, 2011-2019. Journal of Adolescent Health, 72(3), 408-414.</a></li>
-            <li><a href="#">Goldfarb, E. S., & Lieberman, L. D. (2021). Three decades of research: The case for comprehensive sex education. Journal of Adolescent Health, 68(1), 13-27.</a></li>
-            <li><a href="#">Keogh, S. C., Stillman, M., Awusabo-Asare, K., et al. (2020). Challenges to implementing national comprehensive sexuality education curricula in low- and middle-income countries: Case studies of Ghana, Kenya, Peru and Guatemala. PLoS One, 15(7), e0236510.</a></li>
-        </ul>
-        <h3>各国の性教育ポリシーとカリキュラム：</h3>
-        <ul>
-            <li><a href="https://www.mext.go.jp/a_menu/kenko/hoken/08111805.htm">日本：文部科学省 - 学校における性教育の考え方、進め方</a></li>
-            <li><a href="https://siecus.org/state-profiles-2019/">アメリカ：SIECUS - State Profiles Fiscal Year 2019</a></li>
-            <li><a href="https://www.rutgers.nl/en/products/spring-fever">オランダ：Rutgers - Spring Fever (性教育週間プログラム)</a></li>
-            <li><a href="https://www.skolverket.se/skolutveckling/inspiration-och-stod-i-arbetet/stod-i-arbetet/sexualitet-samtycke-och-relationer">スウェーデン：Skolverket - 性、同意、関係性に関する教育ガイド</a></li>
-        </ul>
-        <h3>NGOと教育団体：</h3>
-        <ul>
-            <li><a href="https://www.plannedparenthood.org/learn">Planned Parenthood - Sex Education Resources</a></li>
-            <li><a href="https://www.brook.org.uk/resources/">Brook - Sexual Health and Wellbeing Resources (UK)</a></li>
-            <li><a href="https://www.advocatesforyouth.org/resources/">Advocates for Youth - Sex Education Resources</a></li>
-        </ul>
-    </div>
-
+        <div x-show="activeTab === 'resources'" x-transition x-cloak>
+            <h2 class="text-2xl font-bold mb-4">5. 関連リソース</h2>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3">国際機関のガイドライン</h3>
+                    <ul class="list-disc pl-5">
+                        <li><a href="https://www.unesco.org/en/education/health-well-being/comprehensive-sexuality-education" class="text-blue-600 hover:underline">UNESCO: International technical guidance on sexuality education</a></li>
+                        <li><a href="https://www.who.int/publications/i/item/9789231002595" class="text-blue-600 hover:underline">WHO: Standards for Sexuality Education in Europe</a></li>
+                        <li><a href="https://www.unfpa.org/comprehensive-sexuality-education" class="text-blue-600 hover:underline">UNFPA: Comprehensive Sexuality Education</a></li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold mb-3">研究論文</h3>
+                    <ul class="list-disc pl-5">
+                        <li><a href="#" class="text-blue-600 hover:underline">Lindberg, L. D., & Kantor, L. M. (2023). Adolescents' receipt of sex education in a nationally representative sample, 2011-2019. Journal of Adolescent Health, 72(3), 408-414.</a></li>
+                        <li><a href="#" class="text-blue-600 hover:underline">Goldfarb, E. S., & Lieberman, L. D. (2021). Three decades of research: The case for comprehensive sex education. Journal of Adolescent Health, 68(1), 13-27.</a></li>
+                    </ul>
+                </div>
+                <!-- 各国の性教育ポリシーとカリキュラム、NGOと教育団体のリソースも同様に追加 -->
+            </div>
+        </div>
+    </main>
     <script>
         function searchAndHighlight() {
             const era = document.getElementById('eraSelect').value;
             const country = document.getElementById('countrySelect').value;
-            
             // Remove existing highlights and show all rows
             document.querySelectorAll('.highlight').forEach(el => {
                 el.classList.remove('highlight');
@@ -838,13 +863,79 @@
         document.getElementById('eraSelect').addEventListener('change', searchAndHighlight);
         document.getElementById('countrySelect').addEventListener('change', searchAndHighlight);
 
-        // ナビゲーション機能
-        document.querySelectorAll('#navigation a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href').slice(1);
-                document.getElementById(targetId).scrollIntoView({behavior: 'smooth'});
-            });
+        // チャートの作成
+        const startAgeCtx = document.getElementById('startAgeChart').getContext('2d');
+        new Chart(startAgeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['日本', 'アメリカ', 'オランダ', 'スウェーデン', '中国', '韓国'],
+                datasets: [{
+                    label: '性教育開始年齢（概算）',
+                    data: [12, 10, 4, 5, 12, 8],
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '年齢'
+                        }
+                    }
+                }
+            }
+        });
+
+        const approachCtx = document.getElementById('approachChart').getContext('2d');
+        new Chart(approachCtx, {
+            type: 'radar',
+            data: {
+                labels: ['包括的アプローチ', '生物学的アプローチ', '心理社会的アプローチ', 'ジェンダー平等視点', '多様性への配慮'],
+                datasets: [
+                    {
+                        label: '日本',
+                        data: [2, 4, 2, 2, 1],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        pointBackgroundColor: 'rgb(255, 99, 132)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    },
+                    {
+                        label: 'オランダ',
+                        data: [5, 4, 5, 5, 4],
+                        fill: true,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        pointBackgroundColor: 'rgb(54, 162, 235)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(54, 162, 235)'
+                    }
+                ]
+            },
+            options: {
+                elements: {
+                    line: {
+                        borderWidth: 3
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: false
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 5
+                    }
+                }
+            }
         });
     </script>
 </body>
