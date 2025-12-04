@@ -2,954 +2,2370 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>世界の性教育の包括的比較と評価</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>HADO 回避トレーニング v3 - 学習AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <style>
-        [x-cloak] { display: none !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --vh: 1vh;
+        }
+        
+        html, body {
+            height: 100%;
+            height: -webkit-fill-available;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            min-height: 100vh;
+            min-height: calc(var(--vh, 1vh) * 100);
+            overflow: hidden;
+        }
+        
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container.training-mode { 
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body.training-active {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        header { text-align: center; margin-bottom: 20px; }
+        .container.training-mode header { display: none; }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            letter-spacing: 4px;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% center; }
+            50% { background-position: 200% center; }
+        }
+        
+        .subtitle { font-size: 1rem; color: #888; letter-spacing: 3px; margin-top: 5px; }
+        
+        .main-area {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .container.training-mode .main-area { width: 100%; height: 100vh; }
+        
+        .video-container {
+            position: relative;
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+        
+        .container.training-mode .video-container {
+            width: 100%; height: 100%;
+            border: none; border-radius: 0;
+        }
+        
+        #videoElement {
+            display: block;
+            transform: scaleX(-1);
+            width: 640px; height: 480px;
+            max-width: 100%;
+        }
+        
+        .container.training-mode #videoElement {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none;
+            object-fit: cover;
+            z-index: 1;
+        }
+        
+        #canvas {
+            position: absolute;
+            top: 0; left: 0;
+            transform: scaleX(-1);
+            width: 640px; height: 480px;
+            max-width: 100%;
+        }
+        
+        .container.training-mode #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none;
+            z-index: 2;
+        }
+        
+        .distance-warning {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 25px;
+            background: rgba(255, 100, 0, 0.9);
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        
+        .distance-warning.show { opacity: 1; }
+        
+        .timer-display {
+            position: absolute;
+            top: 20px; right: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            z-index: 100;
+        }
+        
+        .timer-display.warning {
+            color: #ffff00;
+            text-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+            animation: timerPulse 0.5s ease infinite;
+        }
+        
+        .timer-display.critical {
+            color: #ff0066;
+            text-shadow: 0 0 20px rgba(255, 0, 102, 0.8);
+            animation: timerPulse 0.3s ease infinite;
+        }
+        
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .score-display {
+            position: absolute;
+            top: 20px; left: 20px;
+            font-family: 'Orbitron', sans-serif;
+            z-index: 100;
+        }
+        
+        .score-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .score-label { font-size: 0.9rem; color: #888; }
+        .score-value { font-size: 2rem; font-weight: 900; }
+        .score-value.success { color: #00ff88; }
+        .score-value.fail { color: #ff0066; }
+        
+        .life-display {
+            position: absolute;
+            top: 120px; left: 20px;
+            z-index: 100;
+        }
+        
+        .life-indicator {
+            width: 70px; height: 70px;
+            position: relative;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+        }
+        
+        .life-quarter {
+            position: absolute;
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, #00ffff, #0088ff);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            transition: all 0.3s;
+        }
+        
+        .life-quarter.top {
+            top: 5px; left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50% 50% 0 0;
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+        }
+        
+        .life-quarter.right {
+            top: 50%; right: 5px;
+            transform: translateY(-50%);
+            border-radius: 0 50% 50% 0;
+            clip-path: polygon(0 50%, 100% 0, 100% 100%);
+        }
+        
+        .life-quarter.bottom {
+            bottom: 5px; left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 50% 50%;
+            clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        }
+        
+        .life-quarter.left {
+            top: 50%; left: 5px;
+            transform: translateY(-50%);
+            border-radius: 50% 0 0 50%;
+            clip-path: polygon(100% 50%, 0 0, 0 100%);
+        }
+        
+        .life-quarter.lost { background: rgba(100, 100, 100, 0.3); box-shadow: none; }
+        
+        .ai-level-display {
+            position: absolute;
+            top: 210px; left: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: #ff00ff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 255, 0.5);
+            z-index: 100;
+        }
+        
+        .ai-level-display .level-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .ai-learning-display {
+            position: absolute;
+            top: 260px; left: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: #ffaa00;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 170, 0, 0.5);
+            z-index: 100;
+            max-width: 180px;
+        }
+        
+        .ai-learning-display .learning-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .ai-learning-display .tendency {
+            font-size: 0.75rem;
+            color: #ccc;
+            line-height: 1.4;
+        }
+        
+        .stop-training-btn {
+            position: absolute;
+            bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 40px;
+            background: rgba(255, 0, 102, 0.8);
+            border: 2px solid #ff0066;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s;
+        }
+        
+        .stop-training-btn:hover {
+            background: rgba(255, 0, 102, 1);
+            box-shadow: 0 0 30px rgba(255, 0, 102, 0.6);
+        }
+        
+        .control-panel {
+            background: linear-gradient(145deg, rgba(20, 20, 30, 0.9), rgba(10, 10, 20, 0.95));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            min-width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+        
+        .container.training-mode .control-panel { display: none; }
+        
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #00ffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+        }
+        
+        .panel-title.ai { color: #ff00ff; border-color: rgba(255, 0, 255, 0.3); }
+        .panel-title.learning { color: #ffaa00; border-color: rgba(255, 170, 0, 0.3); }
+        
+        .slider-group { margin-bottom: 20px; }
+        
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        
+        .slider-group label span { color: #00ffff; font-family: 'Orbitron', sans-serif; }
+        .slider-group label span.ai-value { color: #ff00ff; }
+        .slider-group label span.learn-value { color: #ffaa00; }
+        
+        .slider-group .description {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        input[type="range"] {
+            width: 100%; height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px; height: 18px;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        input[type="range"].ai-slider::-webkit-slider-thumb {
+            background: linear-gradient(135deg, #ff00ff, #ff0066);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        
+        input[type="range"].learn-slider::-webkit-slider-thumb {
+            background: linear-gradient(135deg, #ffaa00, #ff6600);
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 18px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+        }
+        
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        
+        .status-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #ff0066;
+            animation: statusPulse 1s ease infinite;
+        }
+        
+        .status-dot.ready { background: #00ff88; }
+        
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text { font-size: 0.9rem; color: #888; }
+        
+        .result-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .result-screen.show { opacity: 1; pointer-events: auto; }
+        
+        .result-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+        
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .result-stat {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+        
+        .result-stat-label { font-size: 1rem; color: #888; margin-bottom: 10px; }
+        .result-stat-value { font-family: 'Orbitron', sans-serif; font-size: 3rem; font-weight: 900; }
+        .result-stat-value.cyan { color: #00ffff; }
+        .result-stat-value.green { color: #00ff88; }
+        .result-stat-value.magenta { color: #ff0066; }
+        .result-stat-value.yellow { color: #ffff00; }
+        
+        .btn-restart {
+            padding: 20px 60px;
+            background: linear-gradient(135deg, #00ffff, #00cccc);
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+            transition: all 0.2s;
+        }
+        
+        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(0, 255, 255, 0.6); }
+        
+        .permission-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(10, 10, 15, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .permission-screen.hidden { display: none; }
+        
+        .permission-icon {
+            width: 100px; height: 100px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .permission-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #00ffff;
+            margin-bottom: 15px;
+        }
+        
+        .permission-text {
+            font-size: 1rem;
+            color: #888;
+            max-width: 400px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .btn-allow {
+            padding: 18px 50px;
+            background: linear-gradient(135deg, #00ffff, #00cccc);
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+            transition: all 0.2s;
+        }
+        
+        .btn-allow:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(0, 255, 255, 0.6); }
+        
+        .countdown-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1500;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .countdown-overlay.show { opacity: 1; pointer-events: auto; }
+        
+        .countdown-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15rem;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 50px rgba(0, 255, 255, 0.8);
+            animation: countdownPop 1s ease;
+        }
+        
+        @keyframes countdownPop {
+            0% { transform: scale(2); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+        
+        .hit-flash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 500;
+        }
+        
+        .hit-flash.success {
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.4) 0%, transparent 70%);
+            animation: flashEffect 0.3s ease;
+        }
+        
+        .hit-flash.fail {
+            background: radial-gradient(circle, rgba(255, 0, 102, 0.4) 0%, transparent 70%);
+            animation: flashEffect 0.3s ease;
+        }
+        
+        @keyframes flashEffect {
+            0% { opacity: 0; }
+            30% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .ko-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 0, 102, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 600;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .ko-overlay.show { animation: koFlash 1.5s ease forwards; }
+        
+        @keyframes koFlash {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .ko-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8rem;
+            font-weight: 900;
+            color: #ff0066;
+            text-shadow: 0 0 50px rgba(255, 0, 102, 0.8);
+        }
+        
+        /* モバイル対応 */
+        @media screen and (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+            
+            .container {
+                padding: 10px;
+                min-height: auto;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+            }
+            
+            .subtitle {
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+            }
+            
+            .main-area {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .video-container {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            #videoElement {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+            }
+            
+            #canvas {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+            }
+            
+            .control-panel {
+                min-width: auto;
+                width: 100%;
+                max-height: none;
+                padding: 15px;
+            }
+            
+            .panel-title {
+                font-size: 1rem;
+                margin-bottom: 15px;
+            }
+            
+            .slider-group {
+                margin-bottom: 15px;
+            }
+            
+            .slider-group label {
+                font-size: 0.9rem;
+            }
+            
+            input[type="range"] {
+                height: 8px;
+            }
+            
+            input[type="range"]::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            
+            .btn {
+                padding: 15px;
+                font-size: 1rem;
+            }
+            
+            .status {
+                padding: 12px;
+            }
+            
+            /* トレーニング中のモバイルUI */
+            .timer-display {
+                font-size: 2rem;
+                top: 10px;
+                right: 10px;
+            }
+            
+            .score-display {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .score-item {
+                margin-bottom: 5px;
+                gap: 5px;
+            }
+            
+            .score-label {
+                font-size: 0.7rem;
+            }
+            
+            .score-value {
+                font-size: 1.3rem;
+            }
+            
+            .life-display {
+                top: 80px;
+                left: 10px;
+            }
+            
+            .life-indicator {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .life-quarter {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .ai-level-display {
+                top: 145px;
+                left: 10px;
+                font-size: 0.65rem;
+                padding: 5px 8px;
+            }
+            
+            .ai-level-display .level-name {
+                font-size: 0.85rem;
+            }
+            
+            .ai-learning-display {
+                top: 185px;
+                left: 10px;
+                font-size: 0.6rem;
+                padding: 5px 8px;
+                max-width: 140px;
+            }
+            
+            .ai-learning-display .learning-title {
+                font-size: 0.7rem;
+            }
+            
+            .ai-learning-display .tendency {
+                font-size: 0.6rem;
+            }
+            
+            .distance-warning {
+                top: 50px;
+                font-size: 0.8rem;
+                padding: 8px 15px;
+            }
+            
+            .stop-training-btn {
+                bottom: 20px;
+                padding: 12px 30px;
+                font-size: 0.9rem;
+            }
+            
+            /* 結果画面のモバイル対応 */
+            .result-title {
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+            }
+            
+            .result-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 0 15px;
+                margin-bottom: 25px;
+            }
+            
+            .result-stat {
+                padding: 15px 10px;
+            }
+            
+            .result-stat-label {
+                font-size: 0.8rem;
+            }
+            
+            .result-stat-value {
+                font-size: 2rem;
+            }
+            
+            .btn-restart {
+                padding: 15px 40px;
+                font-size: 1rem;
+            }
+            
+            /* カウントダウン */
+            .countdown-number {
+                font-size: 8rem;
+            }
+            
+            /* K.O. */
+            .ko-text {
+                font-size: 5rem;
+            }
+            
+            /* 許可画面 */
+            .permission-screen {
+                padding: 20px;
+            }
+            
+            .permission-icon {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .permission-title {
+                font-size: 1.3rem;
+            }
+            
+            .permission-text {
+                font-size: 0.9rem;
+            }
+            
+            .btn-allow {
+                padding: 15px 35px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* 横向きスマホ対応 - カメラフルサイズ */
+        @media screen and (max-width: 932px) and (orientation: landscape) {
+            body {
+                overflow: hidden;
+            }
+            
+            .container:not(.training-mode) {
+                padding: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            .container:not(.training-mode) header {
+                display: none;
+            }
+            
+            .container:not(.training-mode) .main-area {
+                width: 100%;
+                height: 100%;
+                gap: 0;
+            }
+            
+            .container:not(.training-mode) .video-container {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            .container:not(.training-mode) #videoElement {
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: none !important;
+                max-height: none !important;
+                object-fit: cover;
+            }
+            
+            .container:not(.training-mode) #canvas {
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: none !important;
+                max-height: none !important;
+            }
+            
+            .container:not(.training-mode) .control-panel {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 280px;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                border: none;
+                border-left: 2px solid rgba(0, 255, 255, 0.3);
+                background: linear-gradient(145deg, rgba(10, 10, 20, 0.95), rgba(5, 5, 15, 0.98));
+                z-index: 200;
+                padding: 15px;
+                overflow-y: auto;
+                transform: translateX(0);
+                transition: transform 0.3s ease;
+            }
+            
+            .container:not(.training-mode) .control-panel.hidden-panel {
+                transform: translateX(100%);
+            }
+            
+            .container:not(.training-mode) .panel-title {
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+            }
+            
+            .container:not(.training-mode) .slider-group {
+                margin-bottom: 12px;
+            }
+            
+            .container:not(.training-mode) .slider-group label {
+                font-size: 0.8rem;
+                margin-bottom: 5px;
+            }
+            
+            .container:not(.training-mode) .slider-group .description {
+                font-size: 0.65rem;
+            }
+            
+            .container:not(.training-mode) .btn {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .container:not(.training-mode) .status {
+                padding: 10px;
+                margin-top: 10px;
+            }
+            
+            .container:not(.training-mode) .status-text {
+                font-size: 0.8rem;
+            }
+            
+            /* パネル開閉ボタン */
+            .panel-toggle-btn {
+                display: block !important;
+            }
+        }
+        
+        /* パネル開閉ボタン（横画面時のみ表示） */
+        .panel-toggle-btn {
+            display: none;
+            position: fixed;
+            top: 50%;
+            right: 280px;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 60px;
+            background: rgba(0, 255, 255, 0.8);
+            border: none;
+            border-radius: 8px 0 0 8px;
+            color: #000;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 201;
+            transition: right 0.3s ease;
+        }
+        
+        .panel-toggle-btn.panel-hidden {
+            right: 0;
+        }
+        
+        .panel-toggle-btn:active {
+            background: rgba(0, 255, 255, 1);
+        }
+        
+        /* 横画面でのトレーニング中表示も調整 */
+        @media screen and (max-width: 932px) and (orientation: landscape) {
+            .container.training-mode {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+            
+            .container.training-mode #videoElement,
+            .container.training-mode #canvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100% !important;
+                height: 100% !important;
+                max-width: none !important;
+                max-height: none !important;
+                object-fit: cover;
+            }
+            
+            .container.training-mode .distance-warning {
+                top: 10px;
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+            
+            .container.training-mode .timer-display {
+                font-size: 2rem;
+                top: 10px;
+                right: 10px;
+            }
+            
+            .container.training-mode .score-display {
+                top: 10px;
+                left: 10px;
+            }
+            
+            .container.training-mode .score-value {
+                font-size: 1.2rem;
+            }
+            
+            .container.training-mode .score-label {
+                font-size: 0.65rem;
+            }
+            
+            .container.training-mode .life-display {
+                top: 70px;
+                left: 10px;
+            }
+            
+            .container.training-mode .life-indicator {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .container.training-mode .life-quarter {
+                width: 18px;
+                height: 18px;
+            }
+            
+            .container.training-mode .ai-level-display {
+                top: 125px;
+                left: 10px;
+                font-size: 0.6rem;
+                padding: 4px 6px;
+            }
+            
+            .container.training-mode .ai-level-display .level-name {
+                font-size: 0.75rem;
+            }
+            
+            .container.training-mode .ai-learning-display {
+                top: 160px;
+                left: 10px;
+                font-size: 0.55rem;
+                padding: 4px 6px;
+                max-width: 120px;
+            }
+            
+            .container.training-mode .ai-learning-display .learning-title {
+                font-size: 0.65rem;
+            }
+            
+            .container.training-mode .stop-training-btn {
+                bottom: 15px;
+                padding: 10px 25px;
+                font-size: 0.8rem;
+            }
+            
+            .countdown-number {
+                font-size: 6rem;
+            }
+            
+            .ko-text {
+                font-size: 4rem;
+            }
+        }
+        
+        /* タッチデバイス向け調整 */
+        @media (hover: none) and (pointer: coarse) {
+            input[type="range"]::-webkit-slider-thumb {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .btn:active {
+                transform: scale(0.98);
+            }
+            
+            .stop-training-btn:active {
+                background: rgba(255, 0, 102, 1);
+            }
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans" x-data="{ activeTab: 'history' }">
-    <header class="bg-blue-600 text-white py-4 sticky top-0 z-50">
-        <div class="container mx-auto px-4">
-            <h1 class="text-3xl font-bold">世界の性教育の包括的比較と評価</h1>
-        </div>
-    </header>
-
-    <nav class="bg-blue-500 text-white py-2 sticky top-16 z-40">
-        <div class="container mx-auto px-4 flex justify-between">
-            <div class="space-x-4">
-                <button @click="activeTab = 'history'" :class="{ 'font-bold': activeTab === 'history' }">歴史的変遷</button>
-                <button @click="activeTab = 'current'" :class="{ 'font-bold': activeTab === 'current' }">現在の比較</button>
-                <button @click="activeTab = 'evaluation'" :class="{ 'font-bold': activeTab === 'evaluation' }">評価と課題</button>
-                <button @click="activeTab = 'case-studies'" :class="{ 'font-bold': activeTab === 'case-studies' }">事例研究</button>
-                <button @click="activeTab = 'resources'" :class="{ 'font-bold': activeTab === 'resources' }">関連リソース</button>
+<body>
+    <div class="bg-grid"></div>
+    
+    <div class="permission-screen" id="permissionScreen">
+        <svg class="permission-icon" viewBox="0 0 100 100" fill="none">
+            <circle cx="50" cy="50" r="45" stroke="#00ffff" stroke-width="2" fill="none" opacity="0.3"/>
+            <circle cx="50" cy="35" r="15" stroke="#00ffff" stroke-width="2" fill="none"/>
+            <path d="M25 75 Q50 55 75 75" stroke="#00ffff" stroke-width="2" fill="none"/>
+        </svg>
+        <h2 class="permission-title">カメラアクセスが必要です</h2>
+        <p class="permission-text">頭の動きをトラッキングするために、カメラへのアクセス許可が必要です。</p>
+        <button class="btn-allow" onclick="initCamera()">カメラを許可</button>
+    </div>
+    
+    <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-number" id="countdownNumber">3</div>
+    </div>
+    
+    <div class="ko-overlay" id="koOverlay">
+        <div class="ko-text">K.O.</div>
+    </div>
+    
+    <div class="result-screen" id="resultScreen">
+        <h2 class="result-title">トレーニング終了！</h2>
+        <div class="result-stats">
+            <div class="result-stat">
+                <div class="result-stat-label">回避成功</div>
+                <div class="result-stat-value green" id="resultSuccess">0</div>
             </div>
-            <div class="flex space-x-2">
-                <select id="eraSelect" class="text-black px-2 py-1 rounded">
-                    <option value="">年代を選択</option>
-                    <option value="1900">1900年代前半</option>
-                    <option value="1950">1950年代</option>
-                    <option value="1960">1960年代</option>
-                    <option value="1970">1970年代</option>
-                    <option value="1980">1980年代</option>
-                    <option value="1990">1990年代</option>
-                    <option value="2000">2000年代</option>
-                    <option value="2010">2010年代〜現在</option>
-                </select>
-                <select id="countrySelect" class="text-black px-2 py-1 rounded">
-                    <option value="">国を選択</option>
-                    <option value="japan">日本</option>
-                    <option value="usa">アメリカ</option>
-                    <option value="netherlands">オランダ</option>
-                    <option value="sweden">スウェーデン</option>
-                    <option value="china">中国</option>
-                    <option value="korea">韓国</option>
-                </select>
-                <button id="searchButton" class="bg-white text-blue-600 px-2 py-1 rounded">検索</button>
+            <div class="result-stat">
+                <div class="result-stat-label">被弾</div>
+                <div class="result-stat-value magenta" id="resultFail">0</div>
             </div>
-        </div>
-    </nav>
-
-    <main class="container mx-auto px-4 py-8">
-        <div x-show="activeTab === 'history'" x-transition>
-            <h2 class="text-2xl font-bold mb-4">1. 性教育の歴史的変遷と特徴</h2>
-            <div class="overflow-x-auto">
-                <table id="historyTable" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                    <thead class="bg-blue-600 text-white">
-                        <tr>
-                            <th class="p-3">時期</th>
-                            <th class="p-3">日本</th>
-                            <th class="p-3">アメリカ</th>
-                            <th class="p-3">オランダ</th>
-                            <th class="p-3">スウェーデン</th>
-                            <th class="p-3">中国</th>
-                            <th class="p-3">韓国</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr data-era="1900">
-                            <td class="p-3 font-semibold">1900年代前半</td>
-                            <td class="p-3" data-country="japan">
-                                - 1920年代：山本宣治らによる性教育の萌芽<br>
-                                - 1930年代：性病予防を中心とした衛生教育開始<br>
-                                - 社会背景：産業化と都市化の進展、性病の蔓延
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1912年：全米性教育・衛生協会設立<br>
-                                - 1920年代：社会衛生運動の一環として性教育開始<br>
-                                - 背景：移民の増加、都市化による社会問題の顕在化
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1900年代初頭：性病予防教育の開始<br>
-                                - 1930年代：家族計画運動の萌芽<br>
-                                - 背景：産業革命後の社会変化、公衆衛生の重要性認識
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1933年：世界初の義務的性教育を導入<br>
-                                - 背景：社会民主主義思想の台頭、女性の権利向上運動
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 1920年代：新文化運動の影響で性に関する議論開始<br>
-                                - 1930年代：一部知識人による性教育の必要性提唱<br>
-                                - 背景：伝統的価値観と西洋思想の衝突
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 日本統治下：公的な性教育はほぼ存在せず<br>
-                                - 儒教的価値観による性の抑圧<br>
-                                - 背景：植民地支配と伝統文化の葛藤
-                            </td>
-                        </tr>
-                        <tr data-era="1950">
-                            <td class="p-3 font-semibold">1950年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 1947年：学習指導要領で初めて性教育に言及<br>
-                                - 1950年代：純潔教育の推進<br>
-                                - 背景：戦後の民主化、GHQの影響
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1950年代：冷戦期の保守化により性教育後退<br>
-                                - 1953年：キンゼイ報告書発表、社会に衝撃<br>
-                                - 背景：保守主義と性革命の萌芽の対立
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1950年代：カトリック教会の影響下で保守的な性教育<br>
-                                - 背景：戦後復興と伝統的価値観の再確認
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1955年：性教育の義務化を強化<br>
-                                - 背景：福祉国家の発展、男女平等の推進
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 1949年：中華人民共和国成立後、性教育は抑制<br>
-                                - 背景：共産主義イデオロギー、伝統的価値観の強化
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 1950年代：朝鮮戦争後、性教育はほぼ不在<br>
-                                - 背景：戦後復興、伝統的価値観の存続
-                            </td>
-                        </tr>
-                        <tr data-era="1960">
-                            <td class="p-3 font-semibold">1960年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 1960年代後半：科学的性教育の必要性認識<br>
-                                - 1965年：日本家族計画連盟による性教育の推進<br>
-                                - 背景：高度経済成長、性の商品化への懸念
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1960年代：性革命の到来、ピルの普及<br>
-                                - 1964年：SECUSが包括的性教育ガイドライン発表<br>
-                                - 背景：公民権運動、反戦運動、カウンターカルチャー
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1960年代後半：性の自由化運動の開始<br>
-                                - 1967年：ピルの合法化<br>
-                                - 背景：若者文化の台頭、宗教の影響力低下
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1962年：より詳細な性教育カリキュラムの導入<br>
-                                - 背景：性の自由化、男女平等の進展
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 文化大革命期：性教育は完全に抑制<br>
-                                - 背景：極左思想の台頭、伝統文化の否定
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 1960年代：家族計画の一環として限定的な性教育開始<br>
-                                - 背景：経済発展政策、人口抑制政策
-                            </td>
-                        </tr>
-                        <tr data-era="1970">
-                            <td class="p-3 font-semibold">1970年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 1972年：文部省「性教育の手引き」発行<br>
-                                - 1970年代後半：性教育研究団体の設立相次ぐ<br>
-                                - 背景：男女共学の普及、女性の社会進出
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1970年：全米性情報教育協議会（SIECUS）設立<br>
-                                - 1978年：10代の妊娠防止法成立<br>
-                                - 背景：女性解放運動、性の多様性への認識向上
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1971年：オランダ家族計画協会設立<br>
-                                - 1976年：学校での性教育義務化<br>
-                                - 背景：性の自由化の進展、実用的アプローチの採用
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1977年：さらに包括的な性教育カリキュラム導入<br>
-                                - 背景：男女平等のさらなる進展、性の多様性への理解
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 1970年代後半：改革開放政策開始<br>
-                                - 人口抑制政策の一環として家族計画教育開始<br>
-                                - 背景：経済改革、一人っ子政策の導入
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 1970年代：人口抑制政策の強化<br>
-                                - 学校での基礎的な性教育の開始<br>
-                                - 背景：急速な経済発展、都市化の進行
-                            </td>
-                        </tr>
-                        <tr data-era="1980">
-                            <td class="p-3 font-semibold">1980年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 1987年：エイズ教育の開始<br>
-                                - 1989年：学習指導要領改訂、性教育の充実化<br>
-                                - 背景：エイズパニック、少子化問題の顕在化
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1981年：エイズの発見と教育への影響<br>
-                                - 1980年代後半：禁欲のみの性教育プログラム台頭<br>
-                                - 背景：保守政権下での道徳教育重視、エイズ危機
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1984年：包括的性教育プログラム「Long Live Love」開始<br>
-                                - 背景：エイズ危機、実践的アプローチの強化
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1980年代：HIV/AIDS教育の強化<br>
-                                - 性的マイノリティに関する教育の開始<br>
-                                - 背景：エイズ危機、多様性への理解促進
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 1980年代後半：初めての性教育教材作成<br>
-                                - 背景：改革開放の進展、西洋の影響増大
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 1980年代：民主化運動と共に性教育の必要性認識<br>
-                                - 背景：社会の自由化、西洋文化の影響増大
-                            </td>
-                        </tr>
-                        <tr data-era="1990">
-                            <td class="p-3 font-semibold">1990年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 1992年：「生きる力」を育む教育の一環として性教育推進<br>
-                                - 1999年：「学校における性教育の考え方」発表<br>
-                                - 背景：少子化対策、男女共同参画社会基本法制定
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 1991年：包括的性教育vs禁欲教育の論争激化<br>
-                                - 1996年：福祉改革法による禁欲教育への連邦資金提供開始<br>
-                                - 背景：保守vs進歩の対立、10代の妊娠問題
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 1993年：性教育をより包括的に改訂<br>
-                                - 1999年：「Long Live Love」プログラムの更新<br>
-                                - 背景：多文化社会への対応、効果的な性教育モデルの確立
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 1994年：新しい国家カリキュラムで性教育をさらに強化<br>
-                                - 1990年代後半：LGBTQの権利に関する教育の拡大<br>
-                                - 背景：多様性の尊重、ジェンダー平等の推進
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 1994年：カイロ国際人口開発会議参加後、性教育に前向きな姿勢<br>
-                                - 1998年：初の全国規模の性教育会議開催<br>
-                                - 背景：国際社会との協調、社会の開放化
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 1995年：性教育指針の策定<br>
-                                - 1990年代後半：学校での性教育の体系化<br>
-                                - 背景：急速な社会変化、青少年問題への対応
-                            </td>
-                        </tr>
-                        <tr data-era="2000">
-                            <td class="p-3 font-semibold">2000年代</td>
-                            <td class="p-3" data-country="japan">
-                                - 2002年：「性教育バッシング」問題発生<br>
-                                - 2005年：文科省が性教育の行き過ぎに警告<br>
-                                - 背景：保守派の台頭、少子化問題の深刻化
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 2004年：「医学的に正確な」性教育法案の提出<br>
-                                - 2009年：オバマ政権下で包括的性教育への支持拡大<br>
-                                - 背景：エビデンスベースの教育重視、政権交代による政策変更
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 2003年：同性婚の合法化、性教育にも反映<br>
-                                - 2008年：性教育をさらに低年齢から開始する方針<br>
-                                - 背景：性的多様性の尊重、早期教育の重要性認識
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 2005年：性教育にジェンダー理論を本格的に導入<br>
-                                - 2009年：新しい差別禁止法制定、性教育にも影響<br>
-                                - 背景：ジェンダー平等のさらなる推進、多様性の尊重
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 2002年：「青少年性健康教育指導綱要」発表<br>
-                                - 2008年：北京オリンピックを機に性教育への注目度上昇<br>
-                                - 背景：経済発展に伴う社会変化、国際的プレゼンスの向上
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 2001年：学校保健法改正、性教育の義務化<br>
-                                - 2008年：包括的性教育ガイドラインの導入<br>
-                                - 背景：青少年の性問題への懸念、国際基準への対応
-                            </td>
-                        </tr>
-                        <tr data-era="2010">
-                            <td class="p-3 font-semibold">2010年代〜現在</td>
-                            <td class="p-3" data-country="japan">
-                                - 2015年：「性同一性障害に係る児童生徒」に関する文科省通知<br>
-                                - 2017年：新学習指導要領で多様な性に関する記述追加<br>
-                                - 背景：LGBTQの権利意識向上、#MeToo運動の影響
-                            </td>
-                            <td class="p-3" data-country="usa">
-                                - 2015年：全米で同性婚合法化、性教育への影響<br>
-                                - 2018年：多くの州で包括的性教育法案の導入<br>
-                                - 背景：性的多様性の受容拡大、ソーシャルメディアの影響
-                            </td>
-                            <td class="p-3" data-country="netherlands">
-                                - 2012年：デジタル時代に対応した新しい性教育カリキュラム導入<br>
-                                - 2019年：性的同意に関する教育の強化<br>
-                                - 背景：オンラインリスクへの対応、#MeToo運動の影響
-                            </td>
-                            <td class="p-3" data-country="sweden">
-                                - 2011年：新しい教育法で性教育の位置づけ強化<br>
-                                - 2018年：性的同意に関する法改正、教育内容にも反映<br>
-                                - 背景：ジェンダー平等のさらなる推進、#MeToo運動の影響
-                            </td>
-                            <td class="p-3" data-country="china">
-                                - 2011年：複数の省で性教育の試験的導入<br>
-                                - 2017年：一部の大学で性教育の必修化<br>
-                                - 背景：若者の価値観の変化、性に関する社会問題の顕在化
-                            </td>
-                            <td class="p-3" data-country="korea">
-                                - 2015年：包括的性教育に関する国家レベルの議論活発化<br>
-                                - 2020年：オンライン性教育の拡大<br>
-                                - 背景：#MeToo運動の影響、デジタル時代への対応
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="result-stat">
+                <div class="result-stat-label">K.O.回数</div>
+                <div class="result-stat-value cyan" id="resultKO">0</div>
+            </div>
+            <div class="result-stat">
+                <div class="result-stat-label">平均反応</div>
+                <div class="result-stat-value yellow" id="resultAvg">-</div>
             </div>
         </div>
-
-        <div x-show="activeTab === 'current'" x-transition x-cloak>
-            <h2 class="text-2xl font-bold mb-4">2. 現在の性教育内容比較</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-2">開始年齢の比較</h3>
-                    <canvas id="startAgeChart"></canvas>
+        <button class="btn-restart" onclick="backToMenu()">メニューに戻る</button>
+    </div>
+    
+    <div class="container" id="mainContainer">
+        <header>
+            <h1>HADO DODGE TRAINER</h1>
+            <p class="subtitle">ADAPTIVE LEARNING AI</p>
+        </header>
+        
+        <div class="main-area">
+            <div class="video-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <div class="distance-warning" id="distanceWarning"></div>
+                <div class="timer-display" id="timerDisplay" style="display: none;">80</div>
+                <div class="score-display" id="scoreDisplay" style="display: none;">
+                    <div class="score-item">
+                        <span class="score-label">回避</span>
+                        <span class="score-value success" id="liveSuccess">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">被弾</span>
+                        <span class="score-value fail" id="liveFail">0</span>
+                    </div>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold mb-2">アプローチの比較</h3>
-                    <canvas id="approachChart"></canvas>
+                <div class="life-display" id="lifeDisplay" style="display: none;">
+                    <div class="life-indicator">
+                        <div class="life-quarter top" id="lifeTop"></div>
+                        <div class="life-quarter right" id="lifeRight"></div>
+                        <div class="life-quarter bottom" id="lifeBottom"></div>
+                        <div class="life-quarter left" id="lifeLeft"></div>
+                    </div>
                 </div>
+                <div class="ai-level-display" id="aiLevelDisplay" style="display: none;">
+                    🤖 AI予測: <span class="level-name" id="aiLevelName">Lv.3</span>
+                </div>
+                <div class="ai-learning-display" id="aiLearningDisplay" style="display: none;">
+                    <div class="learning-title">🧠 相対位置学習</div>
+                    <div class="tendency" id="tendencyText">データ収集中</div>
+                </div>
+                <button class="stop-training-btn" id="stopTrainingBtn" style="display: none;" onclick="stopTraining()">トレーニング終了</button>
             </div>
-            <div class="mt-8">
-                <h3 class="text-xl font-semibold mb-4">各国の現在の性教育内容詳細</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                        <thead class="bg-blue-600 text-white">
-                            <tr>
-                                <th class="p-3">項目</th>
-                                <th class="p-3">日本</th>
-                                <th class="p-3">アメリカ</th>
-                                <th class="p-3">オランダ</th>
-                                <th class="p-3">スウェーデン</th>
-                                <th class="p-3">中国</th>
-                                <th class="p-3">韓国</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="p-3 font-semibold">開始年齢</td>
-                                <td class="p-3" data-country="japan">主に中学生以降（一部小学校高学年から）</td>
-                                <td class="p-3" data-country="usa">州によって異なるが、多くは小学校高学年から</td>
-                                <td class="p-3" data-country="netherlands">4〜5歳から段階的に</td>
-                                <td class="p-3" data-country="sweden">就学前教育から</td>
-                                <td class="p-3" data-country="china">主に中学生以降</td>
-                                <td class="p-3" data-country="korea">小学校低学年から</td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-semibold">アプローチ</td>
-                                <td class="p-3" data-country="japan">
-                                    主に生物学的・医学的アプローチ。近年、心理社会的側面も徐々に導入。
-                                </td>
-                                <td class="p-3" data-country="usa">
-                                    州により大きく異なる。包括的性教育vs禁欲教育の対立が続く。
-                                </td>
-                                <td class="p-3" data-country="netherlands">
-                                    包括的性教育。生物学、心理学、社会学的側面を統合。
-                                </td>
-                                <td class="p-3" data-country="sweden">
-                                    包括的性教育。ジェンダー平等と多様性を重視。
-                                </td>
-                                <td class="p-3" data-country="china">
-                                    主に生物学的アプローチ。地域により大きな差がある。
-                                </td>
-                                <td class="p-3" data-country="korea">
-                                    生物学的アプローチが中心だが、包括的アプローチへの移行が進行中。
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-semibold">主な内容</td>
-                                <td class="p-3" data-country="japan">
-                                    - 生殖器の構造と機能<br>
-                                    - 月経・射精のメカニズム<br>
-                                    - 性感染症予防<br>
-                                    - 妊娠・出産の基礎知識<br>
-                                    - 近年、性的同意やLGBTQに関する内容も増加
-                                </td>
-                                <td class="p-3" data-country="usa">
-                                    州により異なるが、一般的に：<br>
-                                    - 人間の性と生殖<br>
-                                    - 性感染症と予防<br>
-                                    - 避妊方法<br>
-                                    - 健全な人間関係<br>
-                                    - 性的同意<br>
-                                    - 一部の州ではLGBTQの内容も
-                                </td>
-                                <td class="p-3" data-country="netherlands">
-                                    - 人間の身体と発達<br>
-                                    - 感情と自己肯定感<br>
-                                    - 人間関係とコミュニケーション<br>
-                                    - 性的多様性<br>
-                                    - 性的健康と権利<br>
-                                    - メディアリテラシー
-                                </td>
-                                <td class="p-3" data-country="sweden">
-                                    - 人間の性と生殖<br>
-                                    - ジェンダーと性的指向<br>
-                                    - 人間関係と境界線<br>
-                                    - 性的同意と権利<br>
-                                    - メディアと性<br>
-                                    - 性の多様性
-                                </td>
-                                <td class="p-3" data-country="china">
-                                    - 生殖器の構造と機能<br>
-                                    - 思春期の変化<br>
-                                    - 性感染症予防<br>
-                                    - 避妊方法<br>
-                                    - 一部地域で人間関係やジェンダーの内容も
-                                </td>
-                                <td class="p-3" data-country="korea">
-                                    - 人体の構造と機能<br>
-                                    - 思春期の変化<br>
-                                    - 性感染症と予防<br>
-                                    - 避妊方法<br>
-                                    - 近年、ジェンダー平等や性暴力防止の内容も増加
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="p-3 font-semibold">教材・方法</td>
-                                <td class="p-3" data-country="japan">
-                                    - 教科書中心<br>
-                                    - 講義形式が多い<br>
-                                    - 一部でワークショップ導入<br>
-                                    - デジタル教材の利用増加
-                                </td>
-                                <td class="p-3" data-country="usa">
-                                    - 州や学区により多様<br>
-                                    - 教科書、ビデオ教材<br>
-                                    - ロールプレイ、討論<br>
-                                    - オンライン教材の活用
-                                </td>
-                                <td class="p-3" data-country="netherlands">
-                                    - インタラクティブな教材<br>
-                                    - ロールプレイ、ディスカッション<br>
-                                    - デジタル教材の積極的活用<br>
-                                    - 専門家による出張授業
-                                </td>
-                                <td class="p-3" data-country="sweden">
-                                    - 多様な教材（書籍、映像、デジタル）<br>
-                                    - グループワーク、討論<br>
-                                    - 外部専門家の招聘<br>
-                                    - 生徒主導のプロジェクト
-                                </td>
-                                <td class="p-3" data-country="china">
-                                    - 教科書中心<br>
-                                    - 講義形式が主<br>
-                                    - 一部地域でデジタル教材導入<br>
-                                    - 専門家による特別授業
-                                </td>
-                                <td class="p-3" data-country="korea">
-                                    - 教科書と補助教材<br>
-                                    - 講義とグループワークの併用<br>
-                                    - オンライン教材の導入開始<br>
-                                    - 外部講師による特別授業
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div x-show="activeTab === 'evaluation'" x-transition x-cloak>
-            <h2 class="text-2xl font-bold mb-4">3. 総合評価と今後の課題</h2>
-            <div x-data="{ openCountry: null }">
-                <div class="space-y-4">
-                    <div class="bg-white rounded-lg shadow">
-                        <button 
-                            @click="openCountry = openCountry === '日本' ? null : '日本'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>日本</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === '日本'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === '日本'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>基礎的な生物学的知識の提供は比較的充実</li>
-                                <li>性感染症予防に関する意識は高い</li>
-                                <li>一部地域で先進的な取り組みが始まっている</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>包括的アプローチの不足（人間関係、感情面の教育が不十分）</li>
-                                <li>開始年齢が遅い（多くの先進国と比較して）</li>
-                                <li>LGBTQや性の多様性に関する教育が不足</li>
-                                <li>教員のトレーニングが不十分</li>
-                                <li>社会的タブーにより、オープンな議論が難しい</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>より早期からの段階的な性教育の導入</li>
-                                <li>包括的性教育アプローチの採用（生物学的側面だけでなく、心理的・社会的側面も含む）</li>
-                                <li>教員向けの体系的なトレーニングプログラムの開発と実施</li>
-                                <li>性の多様性やジェンダー平等に関する教育の強化</li>
-                                <li>保護者や地域社会を巻き込んだ性教育の推進</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-lg shadow mt-4">
-                        <button 
-                            @click="openCountry = openCountry === 'アメリカ' ? null : 'アメリカ'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>アメリカ</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === 'アメリカ'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === 'アメリカ'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>多様な教育アプローチの存在</li>
-                                <li>性的同意の概念の強調</li>
-                                <li>一部の州での包括的性教育の実施</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>州によって内容に大きな差がある</li>
-                                <li>政治的・宗教的影響による教育内容の制限</li>
-                                <li>禁欲のみの教育プログラムの存在</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>全国的な統一基準の策定</li>
-                                <li>科学的根拠に基づいた教育の普及</li>
-                                <li>政治的・宗教的対立の克服</li>
-                                <li>包括的性教育の拡大</li>
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- オランダ、スウェーデン、中国、韓国の評価も同様に追加 -->
-                    <div class="bg-white rounded-lg shadow mt-4">
-                        <button 
-                            @click="openCountry = openCountry === 'オランダ' ? null : 'オランダ'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>オランダ</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === 'オランダ'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === 'オランダ'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>早期からの包括的な性教育アプローチ</li>
-                                <li>オープンで実践的なコミュニケーション</li>
-                                <li>性的健康と権利に焦点を当てた教育</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>多様な文化背景を持つ生徒への対応の課題</li>
-                                <li>デジタル時代の新たなリスクへの対応</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>文化的多様性に配慮した教育内容の開発</li>
-                                <li>オンラインでの性的リスクに関する教育の強化</li>
-                                <li>国際的なベストプラクティスの維持と更新</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow mt-4">
-                        <button 
-                            @click="openCountry = openCountry === 'スウェーデン' ? null : 'スウェーデン'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>スウェーデン</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === 'スウェーデン'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === 'スウェーデン'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>ジェンダー平等と多様性を重視した包括的アプローチ</li>
-                                <li>早期からの体系的な性教育</li>
-                                <li>LGBTQ+の権利と包摂性の強調</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>教員間のスキルと知識の差</li>
-                                <li>移民背景を持つ生徒への対応の課題</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>教員の均質的なスキル向上とトレーニング</li>
-                                <li>多文化社会における効果的なアプローチの開発</li>
-                                <li>デジタル時代の新たな課題への対応</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow mt-4">
-                        <button 
-                            @click="openCountry = openCountry === '中国' ? null : '中国'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>中国</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === '中国'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === '中国'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>近年の性教育に対する積極的な政策導入</li>
-                                <li>都市部での先進的な取り組み</li>
-                                <li>国家レベルでの性教育ガイドラインの策定</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>地域間の大きな格差</li>
-                                <li>伝統的価値観との衝突</li>
-                                <li>包括的アプローチの不足</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>全国的な標準カリキュラムの開発と実施</li>
-                                <li>教員トレーニングの全国的な展開</li>
-                                <li>都市部と農村部の格差解消</li>
-                                <li>文化的に適切な包括的性教育の推進</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow mt-4">
-                        <button 
-                            @click="openCountry = openCountry === '韓国' ? null : '韓国'" 
-                            class="w-full text-left p-4 font-semibold flex justify-between items-center"
-                        >
-                            <span>韓国</span>
-                            <svg 
-                                :class="{'rotate-180': openCountry === '韓国'}" 
-                                class="w-5 h-5 transition-transform" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                viewBox="0 0 24 24"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div x-show="openCountry === '韓国'" x-transition class="p-4 border-t">
-                            <h4 class="font-semibold mb-2">長所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>体系的な性教育の基盤整備</li>
-                                <li>近年の包括的アプローチへの移行</li>
-                                <li>デジタル技術を活用した性教育の試み</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">短所：</h4>
-                            <ul class="list-disc pl-5 mb-4">
-                                <li>保守的な社会規範との葛藤</li>
-                                <li>学校間での実施の一貫性不足</li>
-                                <li>LGBTQ+に関する教育の不足</li>
-                            </ul>
-                            <h4 class="font-semibold mb-2">課題：</h4>
-                            <ul class="list-disc pl-5">
-                                <li>包括的性教育の全国的な展開と標準化</li>
-                                <li>教員の専門性向上と継続的なトレーニング</li>
-                                <li>性の多様性に関する教育の強化</li>
-                                <li>デジタル時代に対応した新たな教育内容の開発</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div x-show="activeTab === 'case-studies'" x-transition x-cloak>
-            <h2 class="text-2xl font-bold mb-4">4. 事例研究</h2>
-            <div class="space-y-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-xl font-semibold mb-3">オランダの成功事例</h3>
-                    <p class="mb-4">オランダは、世界で最も効果的な性教育プログラムを持つ国の一つとして知られています。</p>
-                    <h4 class="font-semibold mb-2">特徴：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>4歳からの段階的な教育開始</li>
-                        <li>オープンなコミュニケーションの促進</li>
-                        <li>"Spring Fever" ウィークの実施（毎年の性教育特別週間）</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">結果：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>10代の妊娠率と中絶率が世界最低水準</li>
-                        <li>性的同意や避妊に関する高い意識</li>
-                        <li>LGBTQに対する社会的受容度の向上</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">教訓：</h4>
-                    <ul class="list-disc pl-5">
-                        <li>早期からの包括的アプローチの重要性</li>
-                        <li>社会全体での取り組みの必要性</li>
-                        <li>オープンで判断を控えた対話の効果</li>
-                    </ul>
-                </div>
-                <!-- スウェーデンと日本の事例研究も同様に追加 -->
-                <div class="bg-white p-6 rounded-lg shadow mt-6">
-                    <h3 class="text-xl font-semibold mb-3">スウェーデンのジェンダー平等アプローチ</h3>
-                    <p class="mb-4">スウェーデンは、ジェンダー平等を重視した性教育で知られています。</p>
-                    <h4 class="font-semibold mb-2">特徴：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>就学前教育からのジェンダー平等教育</li>
-                        <li>性教育とジェンダー学習の統合</li>
-                        <li>LGBTQ+の権利と多様性の尊重を重視</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">アプローチ：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>ジェンダーニュートラルな言語の使用</li>
-                        <li>ステレオタイプに挑戦する教材の開発</li>
-                        <li>男女混合のグループディスカッション</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">結果：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>ジェンダー平等意識の高い世代の育成</li>
-                        <li>LGBTQ+に対する社会的受容度の向上</li>
-                        <li>性暴力やハラスメントへの意識向上</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">教訓：</h4>
-                    <ul class="list-disc pl-5">
-                        <li>ジェンダー平等を性教育の中心に据えることの重要性</li>
-                        <li>社会規範や価値観の変革における教育の役割</li>
-                        <li>多様性を尊重する姿勢の育成の必要性</li>
-                    </ul>
+            
+            <button class="panel-toggle-btn" id="panelToggleBtn" onclick="togglePanel()">◀</button>
+            
+            <div class="control-panel" id="controlPanel">
+                <h3 class="panel-title learning">🧠 学習AI設定</h3>
+                
+                <div class="slider-group">
+                    <label>学習強度<span class="learn-value" id="learningStrengthValue">70%</span></label>
+                    <input type="range" class="learn-slider" id="learningStrengthSlider" min="0" max="100" step="10" value="70" onchange="updateLearningStrength()">
+                    <div class="description">相対的な回避パターンをどれだけ重視するか</div>
                 </div>
                 
-                <div class="bg-white p-6 rounded-lg shadow mt-6">
-                    <h3 class="text-xl font-semibold mb-3">日本の「生きる力」を育む性教育の取り組み</h3>
-                    <p class="mb-4">日本では、「生きる力」の育成を目指す教育の一環として性教育を位置づけています。</p>
-                    <h4 class="font-semibold mb-2">特徴：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>学習指導要領に基づく体系的なアプローチ</li>
-                        <li>保健体育を中心とした教科横断的な取り組み</li>
-                        <li>地域や学校の実情に応じた柔軟な実施</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">アプローチ：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>発達段階に応じた段階的な学習</li>
-                        <li>科学的知識と生命尊重の精神の統合</li>
-                        <li>家庭や地域と連携した取り組み</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">課題と今後の展望：</h4>
-                    <ul class="list-disc pl-5 mb-4">
-                        <li>包括的性教育の視点の強化</li>
-                        <li>LGBTQ+に関する教育内容の充実</li>
-                        <li>デジタル時代に対応した新たな教育方法の開発</li>
-                    </ul>
-                    <h4 class="font-semibold mb-2">教訓：</h4>
-                    <ul class="list-disc pl-5">
-                        <li>文化的背景を考慮した性教育の重要性</li>
-                        <li>学校全体で取り組む包括的アプローチの必要性</li>
-                        <li>社会の変化に応じた継続的な改善の重要性</li>
-                    </ul>
+                <h3 class="panel-title ai">🤖 予測AI設定</h3>
+                
+                <div class="slider-group">
+                    <label>予測レベル<span class="ai-value" id="predictionLevelValue">Lv.3 読み</span></label>
+                    <input type="range" class="ai-slider" id="predictionLevelSlider" min="0" max="5" step="1" value="3" onchange="updatePredictionLevel()">
+                    <div class="description" id="predictionDescription">移動方向を読んで先回りする</div>
+                </div>
+                
+                <div class="slider-group">
+                    <label>予測精度ブレ<span class="ai-value" id="predictionNoiseValue">15%</span></label>
+                    <input type="range" class="ai-slider" id="predictionNoiseSlider" min="0" max="50" step="5" value="15" onchange="updatePredictionNoise()">
+                    <div class="description">AIの予測がどれくらいブレるか（0%=完璧）</div>
+                </div>
+                
+                <h3 class="panel-title">⚙️ 弾パラメータ</h3>
+                
+                <div class="slider-group">
+                    <label>着弾までの時間<span id="impactTimeValue">1.2秒</span></label>
+                    <input type="range" id="impactTimeSlider" min="0.6" max="2.5" step="0.1" value="1.2" onchange="updateImpactTime()">
+                </div>
+                
+                <div class="slider-group">
+                    <label>弾の大きさ<span id="bulletSizeValue">80px</span></label>
+                    <input type="range" id="bulletSizeSlider" min="40" max="150" step="10" value="80" onchange="updateBulletSize()">
+                </div>
+                
+                <div class="slider-group">
+                    <label>発射間隔<span id="fireIntervalValue">2.0秒</span></label>
+                    <input type="range" id="fireIntervalSlider" min="1.5" max="4.0" step="0.1" value="2.0" onchange="updateFireInterval()">
+                </div>
+                
+                <div class="slider-group">
+                    <label>狙いのズレ幅<span id="aimOffsetValue">50px</span></label>
+                    <input type="range" id="aimOffsetSlider" min="0" max="120" step="10" value="50" onchange="updateAimOffset()">
+                </div>
+                
+                <div class="slider-group">
+                    <label>最大連射数<span id="burstCountValue">1〜3発</span></label>
+                    <input type="range" id="burstCountSlider" min="1" max="5" step="1" value="3" onchange="updateBurstCount()">
+                </div>
+                
+                <button class="btn btn-start" id="startBtn" onclick="startTraining()" disabled>80秒トレーニング開始</button>
+                
+                <div class="status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span class="status-text" id="statusText">カメラを準備中...</span>
                 </div>
             </div>
         </div>
-
-        <div x-show="activeTab === 'resources'" x-transition x-cloak>
-            <h2 class="text-2xl font-bold mb-4">5. 関連リソース</h2>
-            <div class="space-y-6">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-xl font-semibold mb-3">国際機関のガイドライン</h3>
-                    <ul class="list-disc pl-5">
-                        <li><a href="https://www.unesco.org/en/education/health-well-being/comprehensive-sexuality-education" class="text-blue-600 hover:underline">UNESCO: International technical guidance on sexuality education</a></li>
-                        <li><a href="https://www.who.int/publications/i/item/9789231002595" class="text-blue-600 hover:underline">WHO: Standards for Sexuality Education in Europe</a></li>
-                        <li><a href="https://www.unfpa.org/comprehensive-sexuality-education" class="text-blue-600 hover:underline">UNFPA: Comprehensive Sexuality Education</a></li>
-                    </ul>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-xl font-semibold mb-3">研究論文</h3>
-                    <ul class="list-disc pl-5">
-                        <li><a href="#" class="text-blue-600 hover:underline">Lindberg, L. D., & Kantor, L. M. (2023). Adolescents' receipt of sex education in a nationally representative sample, 2011-2019. Journal of Adolescent Health, 72(3), 408-414.</a></li>
-                        <li><a href="#" class="text-blue-600 hover:underline">Goldfarb, E. S., & Lieberman, L. D. (2021). Three decades of research: The case for comprehensive sex education. Journal of Adolescent Health, 68(1), 13-27.</a></li>
-                    </ul>
-                </div>
-                <!-- 各国の性教育ポリシーとカリキュラム、NGOと教育団体のリソースも同様に追加 -->
-            </div>
-        </div>
-    </main>
+    </div>
+    
+    <div class="hit-flash" id="hitFlash"></div>
+    
     <script>
-        function searchAndHighlight() {
-            const era = document.getElementById('eraSelect').value;
-            const country = document.getElementById('countrySelect').value;
+        let faceDetection;
+        let isRunning = false;
+        let currentFacePosition = null;
+        let lastKnownFacePosition = null;
+        let currentFaceSize = 0;
+        
+        // 改善された予測システム
+        const HISTORY_SIZE = 30;
+        let positionHistory = [];
+        
+        let smoothedVelocity = { x: 0, y: 0 };
+        let smoothedAcceleration = { x: 0, y: 0 };
+        const VELOCITY_SMOOTHING = 0.3;
+        const ACCEL_SMOOTHING = 0.2;
+        const MAX_VELOCITY_RATIO = 1.5;
+        
+        // 学習システム（相対位置ベース）
+        let shotCount = 0;  // 発射した弾の数
+        let dodgeHistory = [];  // 回避履歴: { relativeVector, timestamp }
+        let averageDodgeVector = { x: 0, y: 0 };  // 平均回避ベクトル
+        let lastDodgeVector = null;  // 直前の回避ベクトル
+        let afterDodgePatterns = [];  // 直前の回避後のパターン
+        let learningStrength = 0.7;
+        
+        let trainingTimer = null;
+        let fireTimer = null;
+        let remainingTime = 80;
+        let activeBullets = [];
+        
+        let lives = [true, true, true, true];
+        let koCount = 0;
+        let respawnTimer = null;
+        let isRespawning = false;
+        
+        let successCount = 0;
+        let failCount = 0;
+        let reactionTimes = [];
+        
+        // 弾パラメータ
+        let impactTime = 1200;
+        let bulletSize = 80;
+        let fireInterval = 2000;
+        let aimOffset = 50;
+        let maxBurstCount = 3;
+        
+        // 予測AIパラメータ
+        let predictionLevel = 3;
+        let predictionNoise = 0.15;
+        
+        const PREDICTION_LEVELS = [
+            { name: 'OFF', factor: 0, description: '予測なし - 現在位置を狙う' },
+            { name: 'Lv.1 初級', factor: 0.4, description: '少しだけ動きを読む' },
+            { name: 'Lv.2 中級', factor: 0.6, description: '動きの半分以上を予測する' },
+            { name: 'Lv.3 読み', factor: 0.85, description: '移動方向を読んで先回りする' },
+            { name: 'Lv.4 達人', factor: 1.0, description: '着弾時の位置を完全予測' },
+            { name: 'Lv.5 超越', factor: 1.2, description: '動きの先の先を読む' }
+        ];
+        
+        const BURST_DELAY = 550;
+        const IDEAL_FACE_MIN = 0.15;
+        const IDEAL_FACE_MAX = 0.35;
+        const QUADRANT_GAP = 0.08;
+        
+        const QUADRANTS = [
+            { name: 'top', startAngle: -Math.PI * 0.75, endAngle: -Math.PI * 0.25 },
+            { name: 'right', startAngle: -Math.PI * 0.25, endAngle: Math.PI * 0.25 },
+            { name: 'bottom', startAngle: Math.PI * 0.25, endAngle: Math.PI * 0.75 },
+            { name: 'left', startAngle: Math.PI * 0.75, endAngle: Math.PI * 1.25 }
+        ];
+        
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 回避方向を分類（表示用）
+        function classifyDodgeDirection(dx, dy) {
+            const angle = Math.atan2(dy, dx);
+            if (angle >= -Math.PI/4 && angle < Math.PI/4) return '→';
+            if (angle >= Math.PI/4 && angle < 3*Math.PI/4) return '↓';
+            if (angle >= -3*Math.PI/4 && angle < -Math.PI/4) return '↑';
+            return '←';
+        }
+        
+        // 回避パターンを学習（相対位置ベース）
+        function learnDodgePattern(bullet, facePos) {
+            if (!facePos || !bullet.originalTarget) return;
             
-            // Remove existing highlights and show all rows
-            document.querySelectorAll('.highlight').forEach(el => {
-                el.classList.remove('highlight');
-            });
-            document.querySelectorAll('tr').forEach(row => {
-                row.style.display = '';
-            });
-
-            if (era === '' && country === '') return;
-
-            const tables = ['historyTable', 'contentTable'].map(id => document.getElementById(id)).filter(Boolean);
-
-            tables.forEach(table => {
-                if (table) {
-                    table.querySelectorAll('tr').forEach(row => {
-                        if (era && row.dataset.era && row.dataset.era !== era) {
-                            row.style.display = 'none';
-                        } else {
-                            row.style.display = '';
-                        }
-
-                        if (country) {
-                            row.querySelectorAll(`td[data-country="${country}"]`).forEach(cell => {
-                                cell.classList.add('highlight');
-                            });
-                        }
-                    });
+            // 相対回避ベクトル = 現在の顔位置 - 元の狙い位置
+            const relativeX = facePos.x - bullet.originalTarget.x;
+            const relativeY = facePos.y - bullet.originalTarget.y;
+            const dodgeDist = Math.hypot(relativeX, relativeY);
+            
+            // 十分な回避距離がある場合のみ学習
+            if (dodgeDist < 20) return;
+            
+            const currentVector = { x: relativeX, y: relativeY };
+            
+            // 直前の回避ベクトルからの変化パターンを記録
+            if (lastDodgeVector) {
+                afterDodgePatterns.push({
+                    prev: { ...lastDodgeVector },
+                    next: { ...currentVector }
+                });
+                // 直近10回分を保持
+                if (afterDodgePatterns.length > 10) {
+                    afterDodgePatterns.shift();
                 }
+            }
+            
+            // 履歴に追加
+            dodgeHistory.push({
+                vector: currentVector,
+                timestamp: Date.now()
+            });
+            
+            // 直近15回分を保持
+            if (dodgeHistory.length > 15) {
+                dodgeHistory.shift();
+            }
+            
+            // 平均回避ベクトルを更新（指数移動平均）
+            const alpha = 0.3;  // 新しいデータの重み
+            averageDodgeVector.x = averageDodgeVector.x * (1 - alpha) + relativeX * alpha;
+            averageDodgeVector.y = averageDodgeVector.y * (1 - alpha) + relativeY * alpha;
+            
+            lastDodgeVector = currentVector;
+            
+            updateTendencyDisplay();
+        }
+        
+        // 学習した傾向から予測オフセットを計算（相対位置ベース）
+        function calculateLearnedOffset() {
+            if (dodgeHistory.length < 2) return { x: 0, y: 0 };
+            
+            let predictedX = 0;
+            let predictedY = 0;
+            
+            // 直前の回避後のパターンを優先（交互パターン検出）
+            if (lastDodgeVector && afterDodgePatterns.length >= 3) {
+                // 類似した直前ベクトルからの次の動きを探す
+                let similarCount = 0;
+                let sumX = 0, sumY = 0;
+                
+                for (const pattern of afterDodgePatterns) {
+                    // 直前のベクトルが類似しているか
+                    const dotProduct = (pattern.prev.x * lastDodgeVector.x + pattern.prev.y * lastDodgeVector.y);
+                    const mag1 = Math.hypot(pattern.prev.x, pattern.prev.y);
+                    const mag2 = Math.hypot(lastDodgeVector.x, lastDodgeVector.y);
+                    
+                    if (mag1 > 0 && mag2 > 0) {
+                        const similarity = dotProduct / (mag1 * mag2);
+                        if (similarity > 0.5) {  // 方向が似ている
+                            sumX += pattern.next.x;
+                            sumY += pattern.next.y;
+                            similarCount++;
+                        }
+                    }
+                }
+                
+                if (similarCount >= 2) {
+                    // 類似パターンの平均を予測として使用
+                    predictedX = (sumX / similarCount) * learningStrength;
+                    predictedY = (sumY / similarCount) * learningStrength;
+                    return { x: predictedX, y: predictedY };
+                }
+            }
+            
+            // フォールバック：平均回避ベクトルを使用
+            const avgMag = Math.hypot(averageDodgeVector.x, averageDodgeVector.y);
+            if (avgMag > 20) {
+                predictedX = averageDodgeVector.x * learningStrength;
+                predictedY = averageDodgeVector.y * learningStrength;
+            }
+            
+            return { x: predictedX, y: predictedY };
+        }
+        
+        // 傾向表示を更新
+        function updateTendencyDisplay() {
+            let text = '';
+            
+            if (dodgeHistory.length < 2) {
+                text = 'データ収集中...';
+            } else {
+                const avgMag = Math.hypot(averageDodgeVector.x, averageDodgeVector.y);
+                
+                if (avgMag > 20) {
+                    const direction = classifyDodgeDirection(averageDodgeVector.x, averageDodgeVector.y);
+                    const strength = Math.min(100, Math.round(avgMag / bulletSize * 100));
+                    text = `${direction}方向に避ける傾向 (${strength}%)`;
+                } else {
+                    text = 'パターン分散中';
+                }
+                
+                // 交互パターンを検出
+                if (lastDodgeVector && afterDodgePatterns.length >= 3) {
+                    // 直前と逆方向に避ける傾向をチェック
+                    let reverseCount = 0;
+                    for (const pattern of afterDodgePatterns.slice(-5)) {
+                        const dot = pattern.prev.x * pattern.next.x + pattern.prev.y * pattern.next.y;
+                        if (dot < 0) reverseCount++;  // 逆方向
+                    }
+                    
+                    if (reverseCount >= 3) {
+                        text += '\n🔄 反転パターン検出';
+                    }
+                }
+            }
+            
+            document.getElementById('tendencyText').textContent = text;
+        }
+        
+        // 改善された速度計算
+        function updateMotionTracking(x, y) {
+            const now = Date.now();
+            positionHistory.push({ x, y, time: now });
+            
+            while (positionHistory.length > HISTORY_SIZE) {
+                positionHistory.shift();
+            }
+            
+            if (positionHistory.length < 3) return;
+            
+            const recent = positionHistory.slice(-3);
+            const dt = (recent[2].time - recent[0].time) / 1000;
+            
+            if (dt > 0 && dt < 0.2) {
+                const instantVx = (recent[2].x - recent[0].x) / dt;
+                const instantVy = (recent[2].y - recent[0].y) / dt;
+                
+                const maxVelocity = canvas.width * MAX_VELOCITY_RATIO;
+                const clampedVx = Math.max(-maxVelocity, Math.min(maxVelocity, instantVx));
+                const clampedVy = Math.max(-maxVelocity, Math.min(maxVelocity, instantVy));
+                
+                const prevVx = smoothedVelocity.x;
+                const prevVy = smoothedVelocity.y;
+                
+                smoothedVelocity.x = smoothedVelocity.x * (1 - VELOCITY_SMOOTHING) + clampedVx * VELOCITY_SMOOTHING;
+                smoothedVelocity.y = smoothedVelocity.y * (1 - VELOCITY_SMOOTHING) + clampedVy * VELOCITY_SMOOTHING;
+                
+                if (dt > 0) {
+                    const instantAx = (smoothedVelocity.x - prevVx) / dt;
+                    const instantAy = (smoothedVelocity.y - prevVy) / dt;
+                    
+                    smoothedAcceleration.x = smoothedAcceleration.x * (1 - ACCEL_SMOOTHING) + instantAx * ACCEL_SMOOTHING;
+                    smoothedAcceleration.y = smoothedAcceleration.y * (1 - ACCEL_SMOOTHING) + instantAy * ACCEL_SMOOTHING;
+                }
+            }
+        }
+        
+        // 改善された予測位置計算
+        function calculatePredictedPosition(timeToImpactMs) {
+            const basePos = currentFacePosition || lastKnownFacePosition;
+            if (!basePos) return basePos;
+            
+            // 1発目は必ず中心を狙う
+            if (shotCount === 0) {
+                return { x: basePos.x, y: basePos.y };
+            }
+            
+            if (predictionLevel === 0 && learningStrength === 0) {
+                return basePos;
+            }
+            
+            let predictedX = basePos.x;
+            let predictedY = basePos.y;
+            
+            // 動き予測
+            if (predictionLevel > 0 && positionHistory.length >= 5) {
+                const predFactor = PREDICTION_LEVELS[predictionLevel].factor;
+                const t = (timeToImpactMs / 1000) * predFactor;
+                
+                let consistencyFactor = 1.0;
+                if (positionHistory.length >= 10) {
+                    const older = positionHistory.slice(-10, -5);
+                    const newer = positionHistory.slice(-5);
+                    
+                    const olderDir = Math.atan2(
+                        older[older.length-1].y - older[0].y,
+                        older[older.length-1].x - older[0].x
+                    );
+                    const newerDir = Math.atan2(
+                        newer[newer.length-1].y - newer[0].y,
+                        newer[newer.length-1].x - newer[0].x
+                    );
+                    
+                    let dirDiff = Math.abs(newerDir - olderDir);
+                    if (dirDiff > Math.PI) dirDiff = 2 * Math.PI - dirDiff;
+                    
+                    if (dirDiff > Math.PI / 3) consistencyFactor = 0.5;
+                    else if (dirDiff > Math.PI / 6) consistencyFactor = 0.75;
+                }
+                
+                const speed = Math.hypot(smoothedVelocity.x, smoothedVelocity.y);
+                const minSpeed = canvas.width * 0.05;
+                if (speed < minSpeed) {
+                    consistencyFactor *= speed / minSpeed;
+                }
+                
+                const effectiveT = t * consistencyFactor;
+                predictedX += smoothedVelocity.x * effectiveT + 0.5 * smoothedAcceleration.x * effectiveT * effectiveT * 0.5;
+                predictedY += smoothedVelocity.y * effectiveT + 0.5 * smoothedAcceleration.y * effectiveT * effectiveT * 0.5;
+                
+                // ノイズ
+                const noiseAmount = speed * effectiveT * predictionNoise;
+                predictedX += (Math.random() - 0.5) * 2 * noiseAmount;
+                predictedY += (Math.random() - 0.5) * 2 * noiseAmount;
+            }
+            
+            // 学習した回避パターンを適用
+            const learnedOffset = calculateLearnedOffset();
+            predictedX += learnedOffset.x;
+            predictedY += learnedOffset.y;
+            
+            // 画面内に収める
+            const margin = bulletSize;
+            predictedX = Math.max(margin, Math.min(canvas.width - margin, predictedX));
+            predictedY = Math.max(margin, Math.min(canvas.height - margin, predictedY));
+            
+            return { x: predictedX, y: predictedY };
+        }
+        
+        // モバイル判定
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                || window.innerWidth <= 768;
+        }
+        
+        async function initCamera() {
+            try {
+                // モバイル向けに解像度を調整
+                const constraints = {
+                    video: {
+                        width: { ideal: isMobile() ? 640 : 1280 },
+                        height: { ideal: isMobile() ? 480 : 720 },
+                        facingMode: 'user'
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                await video.play();
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    updateVideoSize();
+                };
+                document.getElementById('permissionScreen').classList.add('hidden');
+                initFaceDetection();
+            } catch (err) {
+                document.getElementById('statusText').textContent = 'カメラエラー: ' + err.message;
+            }
+        }
+        
+        // ビデオサイズをレスポンシブに更新
+        function updateVideoSize() {
+            if (!isRunning) {
+                const container = document.querySelector('.video-container');
+                const isLandscapeMobile = window.innerWidth <= 932 && window.innerWidth > window.innerHeight;
+                
+                if (isLandscapeMobile) {
+                    // 横画面モバイル：フルスクリーン
+                    video.style.width = '100vw';
+                    video.style.height = '100vh';
+                    canvas.style.width = '100vw';
+                    canvas.style.height = '100vh';
+                } else if (isMobile()) {
+                    // 縦画面モバイル
+                    const maxWidth = window.innerWidth - 20;
+                    const aspectRatio = video.videoHeight / video.videoWidth;
+                    const height = Math.min(maxWidth * aspectRatio, window.innerHeight * 0.4);
+                    video.style.width = maxWidth + 'px';
+                    video.style.height = height + 'px';
+                    canvas.style.width = maxWidth + 'px';
+                    canvas.style.height = height + 'px';
+                } else {
+                    // PC
+                    video.style.width = '';
+                    video.style.height = '';
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+        }
+        
+        // パネル開閉
+        function togglePanel() {
+            const panel = document.getElementById('controlPanel');
+            const btn = document.getElementById('panelToggleBtn');
+            
+            panel.classList.toggle('hidden-panel');
+            btn.classList.toggle('panel-hidden');
+            
+            if (panel.classList.contains('hidden-panel')) {
+                btn.textContent = '▶';
+            } else {
+                btn.textContent = '◀';
+            }
+        }
+        
+        function initFaceDetection() {
+            faceDetection = new FaceDetection({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
+            });
+            faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
+            faceDetection.onResults(onResults);
+            processFrame();
+            document.getElementById('statusDot').classList.add('ready');
+            document.getElementById('statusText').textContent = '準備完了 - 開始ボタンを押してください';
+            document.getElementById('startBtn').disabled = false;
+            
+            // モバイル向けデフォルト設定を適用
+            if (isMobile()) {
+                // 弾サイズを小さめに
+                bulletSize = 60;
+                document.getElementById('bulletSizeSlider').value = 60;
+                document.getElementById('bulletSizeValue').textContent = '60px';
+                
+                // 狙いズレを少し小さめに
+                aimOffset = 40;
+                document.getElementById('aimOffsetSlider').value = 40;
+                document.getElementById('aimOffsetValue').textContent = '40px';
+            }
+        }
+        
+        async function processFrame() {
+            if (video.readyState >= 2) await faceDetection.send({ image: video });
+            requestAnimationFrame(processFrame);
+        }
+        
+        function onResults(results) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (results.detections && results.detections.length > 0) {
+                const bbox = results.detections[0].boundingBox;
+                const centerX = bbox.xCenter * canvas.width;
+                const centerY = bbox.yCenter * canvas.height;
+                currentFacePosition = { x: centerX, y: centerY };
+                lastKnownFacePosition = { x: centerX, y: centerY };
+                currentFaceSize = (bbox.height * canvas.height) / canvas.height;
+                
+                if (isRunning) {
+                    updateMotionTracking(centerX, centerY);
+                }
+                
+                checkDistance();
+                
+                if (isRunning && !isRespawning) {
+                    drawCloverLife(centerX, centerY);
+                }
+            } else {
+                currentFacePosition = null;
+                currentFaceSize = 0;
+            }
+            
+            if (isRunning) {
+                updateAndDrawBullets();
+            }
+        }
+        
+        function getLifeRadius() {
+            return Math.max(60, currentFaceSize * canvas.height * 0.9);
+        }
+        
+        function drawCloverLife(faceX, faceY) {
+            const radius = getLifeRadius();
+            const colors = ['rgba(0, 220, 255, 0.5)', 'rgba(0, 180, 255, 0.5)', 'rgba(0, 220, 255, 0.5)', 'rgba(0, 180, 255, 0.5)'];
+            
+            for (let i = 0; i < 4; i++) {
+                const q = QUADRANTS[i];
+                const startAngle = q.startAngle + QUADRANT_GAP;
+                const endAngle = q.endAngle - QUADRANT_GAP;
+                
+                if (lives[i]) {
+                    ctx.fillStyle = colors[i];
+                    ctx.beginPath();
+                    ctx.moveTo(faceX, faceY);
+                    ctx.arc(faceX, faceY, radius, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 1)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(faceX, faceY, radius, startAngle, endAngle);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 8]);
+                    ctx.beginPath();
+                    ctx.arc(faceX, faceY, radius, startAngle, endAngle);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+            
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = 5;
+            for (let i = 0; i < 4; i++) {
+                const angle = QUADRANTS[i].startAngle;
+                ctx.beginPath();
+                ctx.moveTo(faceX, faceY);
+                ctx.lineTo(faceX + Math.cos(angle) * radius, faceY + Math.sin(angle) * radius);
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = QUADRANTS[i].startAngle;
+                ctx.beginPath();
+                ctx.moveTo(faceX, faceY);
+                ctx.lineTo(faceX + Math.cos(angle) * radius, faceY + Math.sin(angle) * radius);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(faceX, faceY, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function getRemainingLives() { return lives.filter(l => l).length; }
+        
+        function normalizeAngle(angle) {
+            while (angle > Math.PI) angle -= 2 * Math.PI;
+            while (angle < -Math.PI) angle += 2 * Math.PI;
+            return angle;
+        }
+        
+        function isPointInQuadrant(px, py, centerX, centerY, radius, qIndex) {
+            const dx = px - centerX;
+            const dy = py - centerY;
+            const distance = Math.hypot(dx, dy);
+            
+            if (distance > radius) return false;
+            if (distance < radius * 0.1) return true;
+            
+            const angle = Math.atan2(dy, dx);
+            const q = QUADRANTS[qIndex];
+            const startAngle = q.startAngle + QUADRANT_GAP;
+            const endAngle = q.endAngle - QUADRANT_GAP;
+            
+            if (qIndex === 3) {
+                return angle >= startAngle || angle <= normalizeAngle(endAngle);
+            }
+            
+            return angle >= startAngle && angle <= endAngle;
+        }
+        
+        function checkCircleQuadrantIntersection(cx, cy, cr, faceX, faceY, lifeRadius, qIndex) {
+            const q = QUADRANTS[qIndex];
+            const startAngle = q.startAngle + QUADRANT_GAP;
+            const endAngle = q.endAngle - QUADRANT_GAP;
+            
+            if (isPointInQuadrant(cx, cy, faceX, faceY, lifeRadius, qIndex)) {
+                return true;
+            }
+            
+            const distToCenter = Math.hypot(cx - faceX, cy - faceY);
+            if (Math.abs(distToCenter - lifeRadius) <= cr) {
+                const angleToCircle = Math.atan2(cy - faceY, cx - faceX);
+                let inArc = false;
+                if (qIndex === 3) {
+                    inArc = angleToCircle >= startAngle || angleToCircle <= normalizeAngle(endAngle);
+                } else {
+                    inArc = angleToCircle >= startAngle && angleToCircle <= endAngle;
+                }
+                if (inArc) return true;
+            }
+            
+            const checkLineCircle = (angle) => {
+                const dirX = Math.cos(angle);
+                const dirY = Math.sin(angle);
+                const toCenterX = cx - faceX;
+                const toCenterY = cy - faceY;
+                const t = Math.max(0, Math.min(lifeRadius, toCenterX * dirX + toCenterY * dirY));
+                const closestX = faceX + dirX * t;
+                const closestY = faceY + dirY * t;
+                const dist = Math.hypot(cx - closestX, cy - closestY);
+                return dist <= cr;
+            };
+            
+            if (checkLineCircle(startAngle) || checkLineCircle(endAngle)) {
+                return true;
+            }
+            
+            const samplePoints = 24;
+            for (let i = 0; i < samplePoints; i++) {
+                const angle = (i / samplePoints) * Math.PI * 2;
+                const px = cx + Math.cos(angle) * cr;
+                const py = cy + Math.sin(angle) * cr;
+                if (isPointInQuadrant(px, py, faceX, faceY, lifeRadius, qIndex)) {
+                    return true;
+                }
+            }
+            
+            for (let r = 0.3; r <= 0.7; r += 0.2) {
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const px = cx + Math.cos(angle) * cr * r;
+                    const py = cy + Math.sin(angle) * cr * r;
+                    if (isPointInQuadrant(px, py, faceX, faceY, lifeRadius, qIndex)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        function getHitQuadrants(bulletX, bulletY, bulletRadius, faceX, faceY) {
+            const hitQuadrants = [];
+            const lifeRadius = getLifeRadius();
+            
+            for (let i = 0; i < 4; i++) {
+                if (!lives[i]) continue;
+                if (checkCircleQuadrantIntersection(bulletX, bulletY, bulletRadius, faceX, faceY, lifeRadius, i)) {
+                    hitQuadrants.push(i);
+                }
+            }
+            return hitQuadrants;
+        }
+        
+        function fireBurst() {
+            if (!isRunning) return;
+            
+            const targetPos = currentFacePosition || lastKnownFacePosition;
+            if (!targetPos) return;
+            
+            const burstCount = Math.floor(Math.random() * maxBurstCount) + 1;
+            for (let i = 0; i < burstCount; i++) {
+                setTimeout(() => fireSingleBullet(), i * BURST_DELAY);
+            }
+        }
+        
+        function fireSingleBullet() {
+            if (!isRunning) return;
+            
+            const basePos = currentFacePosition || lastKnownFacePosition;
+            if (!basePos) return;
+            
+            // 予測位置を計算
+            const predictedPos = calculatePredictedPosition(impactTime);
+            
+            // 1発目はオフセットなし
+            let offsetX = 0;
+            let offsetY = 0;
+            if (shotCount > 0) {
+                offsetX = (Math.random() - 0.5) * 2 * aimOffset;
+                offsetY = (Math.random() - 0.5) * 2 * aimOffset;
+            }
+            
+            activeBullets.push({
+                targetX: predictedPos.x + offsetX,
+                targetY: predictedPos.y + offsetY,
+                originalTarget: { x: predictedPos.x + offsetX, y: predictedPos.y + offsetY },
+                startTime: Date.now(),
+                impactTime: impactTime,
+                maxSize: bulletSize,
+                resolved: false,
+                isPredicted: predictionLevel > 0 || (shotCount > 0 && learningStrength > 0),
+                shotIndex: shotCount
+            });
+            
+            shotCount++;
+        }
+        
+        function updateAndDrawBullets() {
+            const now = Date.now();
+            activeBullets = activeBullets.filter(bullet => {
+                if (bullet.resolved) return false;
+                const elapsed = now - bullet.startTime;
+                const progress = Math.min(elapsed / bullet.impactTime, 1);
+                
+                drawBullet(bullet, progress);
+                
+                if (progress >= 1) {
+                    bullet.resolved = true;
+                    checkImpact(bullet);
+                    return false;
+                }
+                return true;
             });
         }
-
-        // DOMの読み込みが完了してから実行
-        document.addEventListener('DOMContentLoaded', () => {
-            const searchButton = document.getElementById('searchButton');
-            const eraSelect = document.getElementById('eraSelect');
-            const countrySelect = document.getElementById('countrySelect');
-
-            if (searchButton) searchButton.addEventListener('click', searchAndHighlight);
-            if (eraSelect) eraSelect.addEventListener('change', searchAndHighlight);
-            if (countrySelect) countrySelect.addEventListener('change', searchAndHighlight);
-        });
-
-        document.getElementById('searchButton').addEventListener('click', searchAndHighlight);
-        document.getElementById('eraSelect').addEventListener('change', searchAndHighlight);
-        document.getElementById('countrySelect').addEventListener('change', searchAndHighlight);
-
-        // チャートの作成
-        const startAgeCtx = document.getElementById('startAgeChart').getContext('2d');
-        new Chart(startAgeCtx, {
-            type: 'bar',
-            data: {
-                labels: ['日本', 'アメリカ', 'オランダ', 'スウェーデン', '中国', '韓国'],
-                datasets: [{
-                    label: '性教育開始年齢（概算）',
-                    data: [12, 10, 4, 5, 12, 8],
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: '年齢'
-                        }
+        
+        function drawBullet(bullet, progress) {
+            const x = bullet.targetX;
+            const y = bullet.targetY;
+            const currentSize = bullet.maxSize * progress;
+            const isPredicted = bullet.isPredicted;
+            
+            if (progress < 0.25) {
+                const alpha = Math.sin(progress * Math.PI * 12) * 0.5 + 0.5;
+                ctx.strokeStyle = isPredicted 
+                    ? `rgba(255, 100, 255, ${alpha})`
+                    : `rgba(255, 200, 0, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.setLineDash([8, 4]);
+                ctx.beginPath();
+                ctx.arc(x, y, bullet.maxSize, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.strokeStyle = isPredicted 
+                    ? `rgba(255, 100, 255, ${alpha * 0.8})`
+                    : `rgba(255, 200, 0, ${alpha * 0.8})`;
+                ctx.lineWidth = 2;
+                const cs = bullet.maxSize * 0.6;
+                ctx.beginPath();
+                ctx.moveTo(x - cs, y); ctx.lineTo(x + cs, y);
+                ctx.moveTo(x, y - cs); ctx.lineTo(x, y + cs);
+                ctx.stroke();
+            }
+            
+            if (progress >= 0.25) {
+                const gp = (progress - 0.25) / 0.75;
+                const size = bullet.maxSize * 0.2 + currentSize * 0.8;
+                
+                const r = isPredicted ? 255 : 255;
+                const g = isPredicted ? Math.floor(50 * (1 - gp)) : Math.floor(120 * (1 - gp));
+                const b = isPredicted ? Math.floor(255 * (1 - gp * 0.5)) : Math.floor(30 * (1 - gp));
+                
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 1.3);
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.9)`);
+                gradient.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.4)`);
+                gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 1.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + gp * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = isPredicted 
+                    ? `rgba(255, 50, 255, ${0.5 + gp * 0.5})`
+                    : `rgba(255, 50, 50, ${0.5 + gp * 0.5})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, bullet.maxSize * 0.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            if (progress > 0.75) {
+                const alpha = Math.sin((progress - 0.75) / 0.25 * Math.PI * 6) * 0.6 + 0.4;
+                ctx.strokeStyle = isPredicted 
+                    ? `rgba(255, 0, 255, ${alpha})`
+                    : `rgba(255, 0, 0, ${alpha})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(x, y, bullet.maxSize * 1.15, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        function checkImpact(bullet) {
+            if (isRespawning) return;
+            
+            // 回避パターンを学習（被弾時も回避時も）
+            if (currentFacePosition) {
+                learnDodgePattern(bullet, currentFacePosition);
+            }
+            
+            if (!currentFacePosition) {
+                if (lastKnownFacePosition) {
+                    const remaining = lives.map((l, i) => l ? i : -1).filter(i => i >= 0);
+                    if (remaining.length > 0) {
+                        onHit(bullet, [remaining[Math.floor(Math.random() * remaining.length)]]);
                     }
                 }
+                return;
+            }
+            
+            const hitQuadrants = getHitQuadrants(
+                bullet.targetX, bullet.targetY,
+                bullet.maxSize * 0.5,
+                currentFacePosition.x, currentFacePosition.y
+            );
+            
+            if (hitQuadrants.length > 0) {
+                onHit(bullet, hitQuadrants);
+            } else {
+                onDodge(bullet);
+            }
+        }
+        
+        function onDodge(bullet) {
+            successCount++;
+            reactionTimes.push(bullet.impactTime);
+            document.getElementById('liveSuccess').textContent = successCount;
+            document.getElementById('hitFlash').className = 'hit-flash success';
+            setTimeout(() => document.getElementById('hitFlash').className = 'hit-flash', 300);
+        }
+        
+        function onHit(bullet, hitQuadrants) {
+            failCount++;
+            document.getElementById('liveFail').textContent = failCount;
+            for (const qi of hitQuadrants) lives[qi] = false;
+            updateLifeDisplay();
+            document.getElementById('hitFlash').className = 'hit-flash fail';
+            setTimeout(() => document.getElementById('hitFlash').className = 'hit-flash', 300);
+            if (getRemainingLives() <= 0) onKO();
+        }
+        
+        function onKO() {
+            koCount++;
+            isRespawning = true;
+            document.getElementById('koOverlay').classList.add('show');
+            
+            respawnTimer = setTimeout(() => {
+                lives = [true, true, true, true];
+                updateLifeDisplay();
+                isRespawning = false;
+                document.getElementById('koOverlay').classList.remove('show');
+            }, 2000);
+        }
+        
+        function updateLifeDisplay() {
+            ['lifeTop', 'lifeRight', 'lifeBottom', 'lifeLeft'].forEach((id, i) => {
+                document.getElementById(id).classList.toggle('lost', !lives[i]);
+            });
+        }
+        
+        function checkDistance() {
+            const warning = document.getElementById('distanceWarning');
+            if (currentFaceSize < IDEAL_FACE_MIN) {
+                warning.textContent = '📷 もっと近づいてください';
+                warning.classList.add('show');
+            } else if (currentFaceSize > IDEAL_FACE_MAX) {
+                warning.textContent = '📷 もっと離れてください';
+                warning.classList.add('show');
+            } else {
+                warning.classList.remove('show');
+            }
+        }
+        
+        async function startCountdown() {
+            const overlay = document.getElementById('countdownOverlay');
+            const num = document.getElementById('countdownNumber');
+            overlay.classList.add('show');
+            for (let i = 3; i >= 1; i--) {
+                num.textContent = i;
+                num.style.animation = 'none';
+                num.offsetHeight;
+                num.style.animation = 'countdownPop 1s ease';
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            num.textContent = 'GO!';
+            num.style.animation = 'none';
+            num.offsetHeight;
+            num.style.animation = 'countdownPop 1s ease';
+            await new Promise(r => setTimeout(r, 500));
+            overlay.classList.remove('show');
+        }
+        
+        async function startTraining() {
+            successCount = 0; failCount = 0; reactionTimes = [];
+            remainingTime = 80; activeBullets = [];
+            lives = [true, true, true, true];
+            koCount = 0; isRespawning = false;
+            positionHistory = [];
+            smoothedVelocity = { x: 0, y: 0 };
+            smoothedAcceleration = { x: 0, y: 0 };
+            lastKnownFacePosition = currentFacePosition;
+            
+            // 学習データをリセット
+            shotCount = 0;
+            dodgeHistory = [];
+            averageDodgeVector = { x: 0, y: 0 };
+            lastDodgeVector = null;
+            afterDodgePatterns = [];
+            document.getElementById('tendencyText').textContent = 'データ収集中';
+            
+            document.getElementById('liveSuccess').textContent = '0';
+            document.getElementById('liveFail').textContent = '0';
+            updateLifeDisplay();
+            
+            document.body.classList.add('training-active');
+            document.getElementById('mainContainer').classList.add('training-mode');
+            document.getElementById('timerDisplay').style.display = 'block';
+            document.getElementById('scoreDisplay').style.display = 'block';
+            document.getElementById('lifeDisplay').style.display = 'block';
+            document.getElementById('aiLevelDisplay').style.display = 'block';
+            document.getElementById('aiLearningDisplay').style.display = 'block';
+            document.getElementById('aiLevelName').textContent = PREDICTION_LEVELS[predictionLevel].name;
+            document.getElementById('stopTrainingBtn').style.display = 'block';
+            document.getElementById('panelToggleBtn').style.display = 'none';
+            document.getElementById('timerDisplay').textContent = '80';
+            document.getElementById('timerDisplay').className = 'timer-display';
+            
+            // フルスクリーンキャンバスサイズを設定
+            setFullscreenCanvas();
+            
+            await startCountdown();
+            isRunning = true;
+            
+            trainingTimer = setInterval(() => {
+                remainingTime--;
+                document.getElementById('timerDisplay').textContent = remainingTime;
+                if (remainingTime <= 10) {
+                    document.getElementById('timerDisplay').className = 'timer-display critical';
+                } else if (remainingTime <= 20) {
+                    document.getElementById('timerDisplay').className = 'timer-display warning';
+                }
+                if (remainingTime <= 0) endTraining();
+            }, 1000);
+            
+            setTimeout(fireBurst, 500);
+            fireTimer = setInterval(fireBurst, fireInterval);
+        }
+        
+        function stopTraining() { endTraining(); }
+        
+        function endTraining() {
+            isRunning = false; isRespawning = false;
+            clearInterval(trainingTimer);
+            clearInterval(fireTimer);
+            clearTimeout(respawnTimer);
+            activeBullets = [];
+            positionHistory = [];
+            
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            
+            document.getElementById('timerDisplay').style.display = 'none';
+            document.getElementById('scoreDisplay').style.display = 'none';
+            document.getElementById('lifeDisplay').style.display = 'none';
+            document.getElementById('aiLevelDisplay').style.display = 'none';
+            document.getElementById('aiLearningDisplay').style.display = 'none';
+            document.getElementById('stopTrainingBtn').style.display = 'none';
+            document.getElementById('panelToggleBtn').style.display = '';
+            document.getElementById('koOverlay').classList.remove('show');
+            document.body.classList.remove('training-active');
+            document.getElementById('mainContainer').classList.remove('training-mode');
+            
+            // モバイルでビデオサイズを復元
+            setTimeout(updateVideoSize, 100);
+            
+            showResults();
+        }
+        
+        function showResults() {
+            const avg = reactionTimes.length > 0 
+                ? (reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length / 1000).toFixed(2) + 's' : '-';
+            document.getElementById('resultSuccess').textContent = successCount;
+            document.getElementById('resultFail').textContent = failCount;
+            document.getElementById('resultKO').textContent = koCount;
+            document.getElementById('resultAvg').textContent = avg;
+            document.getElementById('resultScreen').classList.add('show');
+        }
+        
+        function backToMenu() { document.getElementById('resultScreen').classList.remove('show'); }
+        
+        function updateLearningStrength() {
+            const v = parseInt(document.getElementById('learningStrengthSlider').value);
+            learningStrength = v / 100;
+            document.getElementById('learningStrengthValue').textContent = v + '%';
+        }
+        
+        function updatePredictionLevel() {
+            const v = parseInt(document.getElementById('predictionLevelSlider').value);
+            predictionLevel = v;
+            const level = PREDICTION_LEVELS[v];
+            document.getElementById('predictionLevelValue').textContent = level.name;
+            document.getElementById('predictionDescription').textContent = level.description;
+        }
+        
+        function updatePredictionNoise() {
+            const v = parseInt(document.getElementById('predictionNoiseSlider').value);
+            predictionNoise = v / 100;
+            document.getElementById('predictionNoiseValue').textContent = v + '%';
+        }
+        
+        function updateImpactTime() {
+            const v = document.getElementById('impactTimeSlider').value;
+            impactTime = parseFloat(v) * 1000;
+            document.getElementById('impactTimeValue').textContent = v + '秒';
+        }
+        
+        function updateBulletSize() {
+            const v = document.getElementById('bulletSizeSlider').value;
+            bulletSize = parseInt(v);
+            document.getElementById('bulletSizeValue').textContent = v + 'px';
+        }
+        
+        function updateFireInterval() {
+            const v = document.getElementById('fireIntervalSlider').value;
+            fireInterval = parseFloat(v) * 1000;
+            document.getElementById('fireIntervalValue').textContent = v + '秒';
+        }
+        
+        function updateAimOffset() {
+            const v = document.getElementById('aimOffsetSlider').value;
+            aimOffset = parseInt(v);
+            document.getElementById('aimOffsetValue').textContent = v + 'px';
+        }
+        
+        function updateBurstCount() {
+            const v = document.getElementById('burstCountSlider').value;
+            maxBurstCount = parseInt(v);
+            document.getElementById('burstCountValue').textContent = '1〜' + v + '発';
+        }
+        
+        // フルスクリーンキャンバスサイズを設定
+        function setFullscreenCanvas() {
+            // 実際の画面サイズを取得（アドレスバーなども考慮）
+            const width = window.innerWidth || document.documentElement.clientWidth;
+            const height = window.innerHeight || document.documentElement.clientHeight;
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // ビデオ要素も明示的にサイズ設定
+            video.style.width = width + 'px';
+            video.style.height = height + 'px';
+        }
+        
+        // リサイズと画面回転対応
+        window.addEventListener('resize', () => {
+            if (isRunning) {
+                setFullscreenCanvas();
+            } else {
+                updateVideoSize();
             }
         });
-
-        const approachCtx = document.getElementById('approachChart').getContext('2d');
-        new Chart(approachCtx, {
-            type: 'radar',
-            data: {
-                labels: ['包括的アプローチ', '生物学的アプローチ', '心理社会的アプローチ', 'ジェンダー平等視点', '多様性への配慮'],
-                datasets: [
-                    {
-                        label: '日本',
-                        data: [2, 4, 2, 2, 1],
-                        fill: true,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgb(255, 99, 132)',
-                        pointBackgroundColor: 'rgb(255, 99, 132)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgb(255, 99, 132)'
-                    },
-                    {
-                        label: 'オランダ',
-                        data: [5, 4, 5, 5, 4],
-                        fill: true,
-                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                        borderColor: 'rgb(54, 162, 235)',
-                        pointBackgroundColor: 'rgb(54, 162, 235)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgb(54, 162, 235)'
-                    }
-                ]
-            },
-            options: {
-                elements: {
-                    line: {
-                        borderWidth: 3
-                    }
-                },
-                scales: {
-                    r: {
-                        angleLines: {
-                            display: false
-                        },
-                        suggestedMin: 0,
-                        suggestedMax: 5
-                    }
+        
+        window.addEventListener('orientationchange', () => {
+            // 少し遅延させて正確なサイズを取得
+            setTimeout(() => {
+                if (isRunning) {
+                    setFullscreenCanvas();
+                } else {
+                    updateVideoSize();
                 }
+            }, 150);
+        });
+        
+        // フルスクリーンAPI対応（iOS Safari用）
+        function requestFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(() => {});
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
             }
+        }
+        
+        // タッチでのスクロール防止（トレーニング中）
+        document.addEventListener('touchmove', (e) => {
+            if (isRunning) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // iOS用：アドレスバーを隠すためのスクロール
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+        });
+        
+        // iOS Safari対応：正確なvh単位を設定
+        function setVH() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(setVH, 150);
         });
     </script>
 </body>
