@@ -1297,6 +1297,9 @@
         let currentFacePosition = null;
         let lastKnownFacePosition = null;
         let currentFaceSize = 0;
+        let lastKnownFaceSize = 0;
+        let currentFaceHeight = 0;  // 顔の実際の高さ（px）
+        let lastKnownFaceHeight = 0;
         
         // 改善された予測システム
         const HISTORY_SIZE = 30;
@@ -1351,8 +1354,8 @@
         ];
         
         const BURST_DELAY = 550;
-        const IDEAL_FACE_MIN = 0.15;
-        const IDEAL_FACE_MAX = 0.35;
+        const IDEAL_FACE_MIN = 0.06;  // 小さい顔でも検出可能に
+        const IDEAL_FACE_MAX = 0.45;
         const QUADRANT_GAP = 0.08;
         
         const QUADRANTS = [
@@ -1625,8 +1628,8 @@
                 // モバイル向けに解像度を調整
                 const constraints = {
                     video: {
-                        width: { ideal: isMobile() ? 640 : 1280 },
-                        height: { ideal: isMobile() ? 480 : 720 },
+                        width: { ideal: isMobile() ? 960 : 1280 },
+                        height: { ideal: isMobile() ? 720 : 720 },
                         facingMode: 'user'
                     }
                 };
@@ -1696,7 +1699,10 @@
             faceDetection = new FaceDetection({
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`
             });
-            faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
+            faceDetection.setOptions({ 
+                model: 'short',
+                minDetectionConfidence: 0.35  // 少し感度を上げる
+            });
             faceDetection.onResults(onResults);
             processFrame();
             document.getElementById('statusDot').classList.add('ready');
@@ -1731,7 +1737,10 @@
                 const centerY = bbox.yCenter * canvas.height;
                 currentFacePosition = { x: centerX, y: centerY };
                 lastKnownFacePosition = { x: centerX, y: centerY };
-                currentFaceSize = (bbox.height * canvas.height) / canvas.height;
+                currentFaceSize = bbox.height;
+                lastKnownFaceSize = currentFaceSize;
+                currentFaceHeight = bbox.height * canvas.height;
+                lastKnownFaceHeight = currentFaceHeight;
                 
                 if (isRunning) {
                     updateMotionTracking(centerX, centerY);
@@ -1744,7 +1753,16 @@
                 }
             } else {
                 currentFacePosition = null;
-                currentFaceSize = 0;
+                // 顔が検出されなくても、前回のサイズを維持
+                if (lastKnownFaceSize) {
+                    currentFaceSize = lastKnownFaceSize;
+                    currentFaceHeight = lastKnownFaceHeight;
+                }
+                
+                // トレーニング中は前回位置でライフを描画し続ける
+                if (isRunning && !isRespawning && lastKnownFacePosition) {
+                    drawCloverLife(lastKnownFacePosition.x, lastKnownFacePosition.y);
+                }
             }
             
             if (isRunning) {
@@ -1753,7 +1771,10 @@
         }
         
         function getLifeRadius() {
-            return Math.max(60, currentFaceSize * canvas.height * 0.9);
+            // 顔の高さの半分（半径）+ 15%の余裕
+            const faceBasedRadius = (currentFaceHeight / 2) * 1.15;
+            // 最低40px、最大なし
+            return Math.max(40, faceBasedRadius);
         }
         
         function drawCloverLife(faceX, faceY) {
@@ -2121,11 +2142,24 @@
         
         function checkDistance() {
             const warning = document.getElementById('distanceWarning');
+            
+            // トレーニング中は極端に小さい場合のみ警告
+            if (isRunning) {
+                if (currentFaceSize < 0.03) {
+                    warning.textContent = '📷 顔が検出しづらいです';
+                    warning.classList.add('show');
+                } else {
+                    warning.classList.remove('show');
+                }
+                return;
+            }
+            
+            // メニュー画面での距離ガイド
             if (currentFaceSize < IDEAL_FACE_MIN) {
-                warning.textContent = '📷 もっと近づいてください';
+                warning.textContent = '📷 近づくと精度が上がります';
                 warning.classList.add('show');
             } else if (currentFaceSize > IDEAL_FACE_MAX) {
-                warning.textContent = '📷 もっと離れてください';
+                warning.textContent = '📷 少し離れてください';
                 warning.classList.add('show');
             } else {
                 warning.classList.remove('show');
